@@ -1,0 +1,3080 @@
+-- This is the master script that runs the code behind the gui.
+local GUI = Instance.new("ObjectValue",game:GetService("ReplicatedStorage"))
+GUI.Name = "WaydroidGUI"
+-- Thing to remember: GUI.Value is the screengui. So for example if you put GUI.Enabled = true you'll get error because its an objectvalue, GUI.Value.Enabled will work though
+local player = game:GetService("Players").LocalPlayer
+local playergui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui",math.huge)
+local CoreGui = game:GetService("CoreGui")
+
+-- Wait for the GUI with the tag "GUI_waydroid_loaded"
+local guiFound = false
+local childAddedConnection = nil
+
+local function findTaggedGUI()
+end
+
+local function onGUIFound(child)
+	if child ~= nil then
+		print(child)
+		guiFound = true
+		print("GUI found, starting script")
+		GUI.Value = child
+		-- Stop listening for new GUIs since we found one
+		if childAddedConnection then
+			childAddedConnection:Disconnect()
+			childAddedConnection = nil
+		end
+	else print(nil)
+	end
+end
+
+-- Check if GUI already exists
+local taggedGUI = findTaggedGUI()
+
+if taggedGUI then
+	onGUIFound(taggedGUI)
+else
+	-- Wait for the GUI to be added with a 10-second timeout per GUI
+	childAddedConnection = playergui.ChildAdded:Connect(function(child)
+		if guiFound then return end -- Already found one, ignore
+
+		-- Start tracking this GUI for up to 10 seconds
+		task.spawn(function()
+			local startTime = tick()
+			local timeout = 10
+
+			while tick() - startTime < timeout and not guiFound do
+				print("Tracking")
+				if child:HasTag("GUI_waydroid_loaded") then
+					onGUIFound(child)
+					return
+				end
+				task.wait(0.1)
+			end
+			-- If we reach here, 10 seconds passed without finding the tag on this GUI
+			-- This GUI is ignored
+		end)
+	end)
+end
+-- The code above is the GUI finder
+-- This code is to clickdetectors, THIS FUNCTION WORKS COMPLETELY FINE IN GAME
+local function fireInstance(instance)
+	local success, err = pcall(function()
+		local className = instance.ClassName
+
+		if className == "TouchTransmitter" then
+			local part = instance.Parent
+			if part and part:IsA("BasePart") then
+				local char = player.Character
+				if char then
+					local humanoidPart = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChildWhichIsA("BasePart")
+					if humanoidPart then
+						firetouchinterest(part, humanoidPart, 0) -- Ignore unknown function, it appears to work in-game
+						task.wait(0.1)
+						firetouchinterest(part, humanoidPart, 1) -- Ignore unknown function, it appears to work in-game
+					end
+				end
+			end
+		elseif className == "ClickDetector" then
+			fireclickdetector(instance) -- Ignore unknown function, it appears to work in-game
+		elseif className == "ProximityPrompt" then
+			fireproximityprompt(instance) -- Ignore unknown function, it appears to work in-game
+		elseif className == "RemoteEvent" then
+			instance:FireServer()
+		elseif className == "RemoteFunction" then
+			instance:InvokeServer()
+		elseif className == "BindableEvent" then
+			instance:Fire()
+		elseif className == "BindableFunction" then
+			local func = instance.OnInvoke
+			if func then
+				func()
+			end
+		end
+	end)
+	if not success then
+		warn("Failed to fire:", err)
+	end
+end
+-----------------------------------------------------------------------------------------------------------------------------------
+-- The code below is the script for the GUI, once it is found by the tracker, it will run this script
+GUI.Changed:Once(function()
+	print("Script is starting..")
+
+	local TweenService = game:GetService("TweenService")
+	local UserInputService = game:GetService("UserInputService")
+	local screenGui = GUI.Value
+	local container = screenGui:FindFirstChild("Container")
+	local icon = screenGui:FindFirstChild("Icon")
+	local sound = screenGui:FindFirstChild("GuiClick")
+	local sectionSelect = container and container:FindFirstChild("SectionSelect")
+	local actionsection = container and container:FindFirstChild("Actionsection")
+	local closeButton = container and container:FindFirstChild("GUIname") and container.GUIname:FindFirstChild("Close button")
+	local closeButtonInstance = closeButton and closeButton:FindFirstChild("TextButton")
+
+	-- Store original sizes and positions
+	local containerOriginalSize = container and container.Size or UDim2.new(0.609561741, 0, 0.808333337, 0)
+	local containerOriginalPosition = container and container.Position or UDim2.new(0.499168813, 0, 0.5, 0)
+	local iconOriginalPosition = icon and icon.Position or UDim2.new(0.492031872, 0, 0.185416669, 0)
+	local isCollapsed = false
+	local isAnimating = false
+	local currentSelection = nil
+
+	-- Track last positions for restoration
+	local containerLastPosition = containerOriginalPosition
+	local iconLastPosition = iconOriginalPosition
+
+	-- Animation tween info
+	local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+
+	-- ============================================
+	-- 1. Play sound function
+	-- ============================================
+	local function playClickSound()
+		if sound then
+			sound:Stop()
+			sound:Play()
+		end
+	end
+
+	-- ============================================
+	-- 2. Collapse/Open animations for Container and Icon
+	-- ============================================
+	local function getIconTextButton()
+		if not icon then return nil end
+		local waydroidIcon = icon:FindFirstChild("Waydroid icon")
+		return waydroidIcon and waydroidIcon:FindFirstChild("TextButton")
+	end
+
+	local function collapseContainer()
+		if isCollapsed or not container or isAnimating then return end
+		isCollapsed = true
+		isAnimating = true
+
+		-- Save current positions before collapsing
+		containerLastPosition = container.Position
+		if icon then
+			iconLastPosition = icon.Position
+		end
+
+		-- Play sound immediately
+		playClickSound()
+
+		-- Disable close button immediately to prevent double-clicks
+		if closeButtonInstance then
+			closeButtonInstance.Interactable = false
+		end
+
+		-- Collapse container to 0% size
+		local collapseTween = TweenService:Create(container, tweenInfo, {
+			Size = UDim2.new(0, 0, 0, 0),
+			Position = UDim2.new(0.5, 0, 0.5, 0)
+		})
+		collapseTween:Play()
+		collapseTween.Completed:Connect(function()
+			-- Hide and disable container when fully collapsed
+			container.Visible = false
+			container.Interactable = false
+			isAnimating = false
+		end)
+
+		-- Show icon when collapsed at its last position
+		if icon then
+			icon.Visible = true
+			icon.Interactable = true
+			icon.Size = UDim2.new(0, 0, 0, 0)
+			icon.Position = iconLastPosition
+
+			-- Disable icon button during animation
+			local iconBtn = getIconTextButton()
+			if iconBtn then
+				iconBtn.Interactable = false
+			end
+
+			local iconTween = TweenService:Create(icon, tweenInfo, {
+				Size = UDim2.new(0, 60, 0, 60)
+			})
+			iconTween:Play()
+			iconTween.Completed:Connect(function()
+				-- Enable icon button after animation completes
+				if iconBtn then
+					iconBtn.Interactable = true
+				end
+			end)
+		end
+	end
+
+	local function openContainer()
+		if not isCollapsed or not container or isAnimating then return end
+		isCollapsed = false
+		isAnimating = true
+
+		-- Play sound immediately
+		playClickSound()
+
+		-- Disable icon button immediately to prevent double-clicks
+		local iconBtn = getIconTextButton()
+		if iconBtn then
+			iconBtn.Interactable = false
+		end
+
+		-- Show and enable container before animating
+		container.Visible = true
+		container.Interactable = true
+
+		-- Hide icon first
+		if icon then
+			local iconTween = TweenService:Create(icon, tweenInfo, {
+				Size = UDim2.new(0, 0, 0, 0)
+			})
+			iconTween:Play()
+			iconTween.Completed:Connect(function()
+				icon.Visible = false
+				icon.Interactable = false
+				icon.Size = UDim2.new(0, 60, 0, 60)
+			end)
+		end
+
+		-- Open container back to last saved position
+		local openTween = TweenService:Create(container, tweenInfo, {
+			Size = containerOriginalSize,
+			Position = containerLastPosition
+		})
+		openTween:Play()
+		openTween.Completed:Connect(function()
+			-- Enable close button after animation completes
+			if closeButtonInstance then
+				closeButtonInstance.Interactable = true
+			end
+			isAnimating = false
+		end)
+	end
+
+	-- Close button click handler
+	if closeButtonInstance then
+		closeButtonInstance.Activated:Connect(collapseContainer)
+	end
+
+	-- Icon TextButton click handler (inside "Waydroid icon" frame)
+	if icon then
+		local iconTextButton = icon and icon:FindFirstChild("TextButton")
+		if iconTextButton then
+			iconTextButton.Activated:Connect(openContainer)
+		end
+	end
+
+	-- Keyboard F key handler
+	UserInputService.InputBegan:Connect(function(input, gameProcessed)
+		if gameProcessed then return end
+		if input.KeyCode == Enum.KeyCode.F then
+			-- Same cooldown as clicking the icon - check isAnimating flag
+			if isAnimating then return end
+			if isCollapsed then
+				openContainer()
+			else
+				collapseContainer()
+			end
+		end
+	end)
+
+	-- ============================================
+	-- 3. Selection switching with UIStroke highlighting
+	-- ============================================
+	local function showActionSection(selectionName)
+		if not actionsection then return end
+
+		-- Hide all action sections first and make them not interactable
+		for _, child in actionsection:GetChildren() do
+			if child:IsA("Frame") and child.Name ~= "UIStroke" then
+				child.Visible = false
+				child.Interactable = false
+			end
+		end
+
+		-- Show the selected section
+		local targetSection = actionsection:FindFirstChild(selectionName)
+		if targetSection then
+			targetSection.Visible = true
+			targetSection.Interactable = true
+		else
+			-- Show default (No selection) if section not found
+			local defaultSection = actionsection:FindFirstChild("No selection")
+			if defaultSection then
+				defaultSection.Visible = true
+				defaultSection.Interactable = true
+			end
+		end
+	end
+
+	local function showDefaultTaggedSection()
+		if not actionsection then return end
+
+		-- Find the frame with tag "Default"
+		for _, child in actionsection:GetChildren() do
+			if child:IsA("Frame") and child:HasTag("Default") then
+				-- Hide all other sections and make them not interactable
+				for _, other in actionsection:GetChildren() do
+					if other:IsA("Frame") and other.Name ~= "UIStroke" then
+						other.Visible = false
+						other.Interactable = false
+					end
+				end
+				-- Show the Default tagged frame
+				child.Visible = true
+				child.Interactable = true
+				return
+			end
+		end
+
+		-- If no Default tagged frame found, show No selection
+		showActionSection("No selection")
+	end
+
+	local function updateSelectionHighlight(selectedButton)
+		if not sectionSelect then return end
+
+		-- Get the parent frame of the button (Selection1, Selection2, etc.)
+		local selectedFrame = selectedButton.Parent
+		local selectedUIStroke = selectedFrame and selectedFrame:FindFirstChild("UIStroke")
+
+		-- Check if this button is already highlighted
+		if selectedUIStroke and selectedUIStroke.Enabled then
+			-- Deselect: disable the UIStroke and show the Default section
+			selectedUIStroke.Enabled = false
+			currentSelection = nil
+			showDefaultTaggedSection()
+			return
+		end
+
+		-- Disable all UIStrokes first
+		for _, child in sectionSelect:GetChildren() do
+			if child:IsA("Frame") then
+				local uiStroke = child:FindFirstChild("UIStroke")
+				if uiStroke then
+					uiStroke.Enabled = false
+				end
+			end
+		end
+
+		-- Enable the selected UIStroke
+		if selectedUIStroke then
+			selectedUIStroke.Enabled = true
+		end
+
+		-- Update current selection and show corresponding section
+		-- Use the button's text to find the correct action section (e.g., "Control room", "Core status")
+		currentSelection = selectedButton.Text
+		showActionSection(currentSelection)
+	end
+
+	-- Connect all selection buttons
+	if sectionSelect then
+		for _, child in sectionSelect:GetChildren() do
+			if child:IsA("Frame") then
+				local textButton = child:FindFirstChild("TextButton")
+				if textButton then
+					textButton.Activated:Connect(function()
+						playClickSound()
+						updateSelectionHighlight(textButton)
+					end)
+				end
+			end
+		end
+	end
+
+	-- Initialize with default view (No selection visible)
+	showActionSection("No selection")
+
+	-- ============================================
+	-- 4. Drag functionality for Container and Icon
+	-- ============================================
+	local function makeDraggable(dragFrame, targetFrame)
+		if not dragFrame or not targetFrame then return end
+
+		local dragging = false
+		local dragInput
+		local dragStart
+		local startPos
+
+		local function updatePosition(input)
+			if not dragging then return end
+
+			local delta = input.Position - dragStart
+			local newPosition = UDim2.new(
+				startPos.X.Scale,
+				startPos.X.Offset + delta.X,
+				startPos.Y.Scale,
+				startPos.Y.Offset + delta.Y
+			)
+
+			-- Smooth movement using tween
+			local tween = TweenService:Create(targetFrame, TweenInfo.new(0.05, Enum.EasingStyle.Linear), {
+				Position = newPosition
+			})
+			tween:Play()
+		end
+
+		-- Mouse input
+		dragFrame.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				dragging = true
+				dragStart = input.Position
+				startPos = targetFrame.Position
+
+				input.Changed:Connect(function()
+					if input.UserInputState == Enum.UserInputState.End then
+						dragging = false
+					end
+				end)
+			end
+		end)
+
+		dragFrame.InputChanged:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+				dragInput = input
+				updatePosition(input)
+			end
+		end)
+
+		-- Alternative: Use UserInputService for more reliable tracking
+		UserInputService.InputChanged:Connect(function(input)
+			if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+				updatePosition(input)
+			end
+		end)
+	end
+
+	-- Special drag function for Icon with TextButton
+	local function makeIconDraggable(iconFrame, textButton)
+		if not iconFrame then return end
+
+		local dragging = false
+		local dragStart
+		local startPos
+		local dragStartTime = 0
+		local hasDragged = false
+
+		local function updatePosition(input)
+			if not dragging then return end
+
+			local delta = input.Position - dragStart
+
+			-- Check if actually dragging (moved more than 5 pixels)
+			if not hasDragged and (math.abs(delta.X) > 5 or math.abs(delta.Y) > 5) then
+				hasDragged = true
+			end
+
+			local newPosition = UDim2.new(
+				startPos.X.Scale,
+				startPos.X.Offset + delta.X,
+				startPos.Y.Scale,
+				startPos.Y.Offset + delta.Y
+			)
+
+			-- Smooth movement using tween
+			local tween = TweenService:Create(iconFrame, TweenInfo.new(0.05, Enum.EasingStyle.Linear), {
+				Position = newPosition
+			})
+			tween:Play()
+		end
+
+		-- Handle drag on the icon frame itself
+		iconFrame.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				dragging = true
+				dragStart = input.Position
+				startPos = iconFrame.Position
+				dragStartTime = tick()
+				hasDragged = false
+
+				input.Changed:Connect(function()
+					if input.UserInputState == Enum.UserInputState.End then
+						dragging = false
+					end
+				end)
+			end
+		end)
+
+		iconFrame.InputChanged:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+				updatePosition(input)
+			end
+		end)
+
+		-- Use UserInputService for more reliable tracking
+		UserInputService.InputChanged:Connect(function(input)
+			if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+				updatePosition(input)
+			end
+		end)
+
+		-- Handle TextButton drag - prevent click if dragged
+		if textButton then
+			textButton.InputBegan:Connect(function(input)
+				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+					dragging = true
+					dragStart = input.Position
+					startPos = iconFrame.Position
+					dragStartTime = tick()
+					hasDragged = false
+
+					input.Changed:Connect(function()
+						if input.UserInputState == Enum.UserInputState.End then
+							dragging = false
+							-- If dragged, don't trigger click
+							if hasDragged then
+								-- Prevent the Activated event from opening container
+								textButton.Interactable = false
+								task.wait(0.1)
+								textButton.Interactable = true
+							end
+						end
+					end)
+				end
+			end)
+
+			textButton.InputChanged:Connect(function(input)
+				if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+					updatePosition(input)
+				end
+			end)
+		end
+	end
+
+	-- Make Container draggable via Drag frame
+	local dragFrame = container and container:FindFirstChild("Drag")
+	if dragFrame then
+		makeDraggable(dragFrame, container)
+	end
+
+	-- Make Icon draggable with special handling for TextButton
+	if icon then
+		local iconTextButton = icon:FindFirstChild("TextButton")
+		makeIconDraggable(icon, iconTextButton)
+	end
+
+	-- ============================================
+	-- 5. Gun menu functionality (Laser gun menu)
+	-- ============================================
+	local gunMenu = screenGui:FindFirstChild("Laser gun menu")
+	local gunIcon = screenGui:FindFirstChild("Gun icon")
+	local gunMenuSectionSelect = gunMenu and gunMenu:FindFirstChild("SectionSelect")
+	local gunMenuActionSection = gunMenu and gunMenu:FindFirstChild("GunMenu")
+	local gunMenuCloseButton = gunMenu and gunMenu:FindFirstChild("GUIname") and gunMenu.GUIname:FindFirstChild("Close button")
+	local gunMenuCloseButtonInstance = gunMenuCloseButton and gunMenuCloseButton:FindFirstChild("TextButton")
+	local gunMenuDragFrame = gunMenu and gunMenu:FindFirstChild("Drag")
+
+	-- Find the Gun menu master button in Misc section
+	local miscSection = actionsection and actionsection:FindFirstChild("Misc")
+	local gunMenuMaster = miscSection and miscSection:FindFirstChild("Gun menu master")
+	local gunMenuMasterOpen = gunMenuMaster and gunMenuMaster:FindFirstChild("Open")
+	local gunMenuMasterOpenButton = gunMenuMasterOpen and gunMenuMasterOpen:FindFirstChild("TextButton")
+	local gunMenuMasterOpenValue = gunMenuMasterOpen and gunMenuMasterOpen:FindFirstChild("Open")
+
+	-- Store original sizes and positions for gun menu
+	local gunMenuOriginalSize = gunMenu and gunMenu.Size or UDim2.new(0.609561741, 0, 0.808333337, 0)
+	local gunMenuOriginalPosition = gunMenu and gunMenu.Position or UDim2.new(0.499168813, 0, 0.5, 0)
+	local gunIconOriginalPosition = gunIcon and gunIcon.Position or UDim2.new(0.5, 0, 0.85, 0)
+	local gunMenuCollapsed = true
+	local gunMenuAnimating = false
+	local gunMenuEnabled = false -- Master switch state
+	local gunMenuCurrentSelection = nil
+
+	-- Track last positions for restoration
+	local gunMenuLastPosition = gunMenuOriginalPosition
+	local gunIconLastPosition = gunIconOriginalPosition
+
+	-- Add TextButton to Gun icon if it doesn't exist
+	local gunIconTextButton = nil
+	if gunIcon then
+		gunIconTextButton = gunIcon:FindFirstChild("TextButton")
+		if not gunIconTextButton then
+			gunIconTextButton = Instance.new("TextButton")
+			gunIconTextButton.Name = "TextButton"
+			gunIconTextButton.Size = UDim2.new(1, 0, 1, 0)
+			gunIconTextButton.Position = UDim2.new(0, 0, 0, 0)
+			gunIconTextButton.BackgroundTransparency = 1
+			gunIconTextButton.Text = ""
+			gunIconTextButton.Parent = gunIcon
+		end
+	end
+
+	-- Gun menu collapse function
+	local function collapseGunMenu()
+		if gunMenuCollapsed or not gunMenu or gunMenuAnimating then return end
+		gunMenuCollapsed = true
+		gunMenuAnimating = true
+
+		-- Save current positions before collapsing
+		gunMenuLastPosition = gunMenu.Position
+		if gunIcon then
+			gunIconLastPosition = gunIcon.Position
+		end
+
+		-- Play sound immediately
+		playClickSound()
+
+		-- Disable close button immediately to prevent double-clicks
+		if gunMenuCloseButtonInstance then
+			gunMenuCloseButtonInstance.Interactable = false
+		end
+
+		-- Collapse gun menu to 0% size
+		local collapseTween = TweenService:Create(gunMenu, tweenInfo, {
+			Size = UDim2.new(0, 0, 0, 0),
+			Position = UDim2.new(0.5, 0, 0.5, 0)
+		})
+		collapseTween:Play()
+		collapseTween.Completed:Connect(function()
+			-- Hide and disable gun menu when fully collapsed
+			gunMenu.Visible = false
+			gunMenu.Interactable = false
+			gunMenuAnimating = false
+		end)
+
+		-- Show gun icon when collapsed at its last position
+		if gunIcon then
+			gunIcon.Visible = true
+			gunIcon.Interactable = true
+			gunIcon.Size = UDim2.new(0, 0, 0, 0)
+			gunIcon.Position = gunIconLastPosition
+
+			-- Disable gun icon button during animation
+			if gunIconTextButton then
+				gunIconTextButton.Interactable = false
+			end
+
+			local iconTween = TweenService:Create(gunIcon, tweenInfo, {
+				Size = UDim2.new(0, 60, 0, 60)
+			})
+			iconTween:Play()
+			iconTween.Completed:Connect(function()
+				-- Enable gun icon button after animation completes
+				if gunIconTextButton then
+					gunIconTextButton.Interactable = true
+				end
+			end)
+		end
+	end
+
+	-- Gun menu open function
+	local function openGunMenu()
+		if not gunMenuCollapsed or not gunMenu or gunMenuAnimating then return end
+		gunMenuCollapsed = false
+		gunMenuAnimating = true
+
+		-- Play sound immediately
+		playClickSound()
+
+		-- Disable gun icon button immediately to prevent double-clicks
+		if gunIconTextButton then
+			gunIconTextButton.Interactable = false
+		end
+
+		-- Set initial size and position for animation (start from collapsed state)
+		gunMenu.Size = UDim2.new(0, 0, 0, 0)
+		gunMenu.Position = UDim2.new(0.5, 0, 0.5, 0)
+
+		-- Show and enable gun menu before animating
+		gunMenu.Visible = true
+		gunMenu.Interactable = true
+
+		-- Hide gun icon first
+		if gunIcon then
+			local iconTween = TweenService:Create(gunIcon, tweenInfo, {
+				Size = UDim2.new(0, 0, 0, 0)
+			})
+			iconTween:Play()
+			iconTween.Completed:Connect(function()
+				gunIcon.Visible = false
+				gunIcon.Interactable = false
+				gunIcon.Size = UDim2.new(0, 60, 0, 60)
+			end)
+		end
+
+		-- Open gun menu back to last saved position
+		local openTween = TweenService:Create(gunMenu, tweenInfo, {
+			Size = gunMenuOriginalSize,
+			Position = gunMenuLastPosition
+		})
+		openTween:Play()
+		openTween.Completed:Connect(function()
+			-- Enable close button after animation completes
+			if gunMenuCloseButtonInstance then
+				gunMenuCloseButtonInstance.Interactable = true
+			end
+			gunMenuAnimating = false
+		end)
+	end
+
+	-- Function to update the master switch button text
+	local function updateMasterSwitchButtonText()
+		playClickSound()
+		if gunMenuMasterOpenButton and gunMenuMasterOpenValue then
+			gunMenuMasterOpenButton.Text = gunMenuMasterOpenValue.Value and "Open" or "Closed"
+		end
+	end
+
+	-- Function to update gun menu visibility based on master switch
+	local function updateGunMenuVisibility()
+		if not gunMenu then return end
+
+		-- Check if master switch is enabled
+		local isOpen = gunMenuMasterOpenValue and gunMenuMasterOpenValue.Value or false
+
+		-- Update button text
+		updateMasterSwitchButtonText()
+
+		if isOpen then
+			-- Master switch is ON - show gun icon
+			gunMenuEnabled = true
+			if gunIcon then
+				gunIcon.Visible = true
+				gunIcon.Interactable = true
+				gunIcon.Size = UDim2.new(0, 60, 0, 60)
+				gunIcon.Position = gunIconLastPosition
+			end
+			-- Keep gun menu hidden initially
+			gunMenu.Visible = false
+			gunMenu.Interactable = false
+			gunMenuCollapsed = true
+		else
+			-- Master switch is OFF - hide everything immediately
+			gunMenuEnabled = false
+			if gunMenu then
+				gunMenu.Visible = false
+				gunMenu.Interactable = false
+				-- Remember position before hiding
+				if gunMenu.Size.X.Scale > 0 then
+					gunMenuLastPosition = gunMenu.Position
+				end
+			end
+			if gunIcon then
+				gunIcon.Visible = false
+				gunIcon.Interactable = false
+				-- Remember position before hiding
+				if gunIcon.Size.X.Offset > 0 then
+					gunIconLastPosition = gunIcon.Position
+				end
+			end
+		end
+	end
+
+	-- Close button click handler for gun menu
+	if gunMenuCloseButtonInstance then
+		gunMenuCloseButtonInstance.Activated:Connect(collapseGunMenu)
+	end
+
+	-- Gun icon TextButton click handler
+	if gunIconTextButton then
+		gunIconTextButton.Activated:Connect(openGunMenu)
+	end
+
+	-- Keyboard G key handler for gun menu
+	UserInputService.InputBegan:Connect(function(input, gameProcessed)
+		if gameProcessed then return end
+		if input.KeyCode == Enum.KeyCode.G then
+			-- Only work if gun menu is enabled (master switch is ON)
+			if not gunMenuEnabled then return end
+			-- Same cooldown as clicking the icon - check isAnimating flag
+			if gunMenuAnimating then return end
+			if gunMenuCollapsed then
+				openGunMenu()
+			else
+				collapseGunMenu()
+			end
+		end
+	end)
+
+	-- Master switch button handler
+	if gunMenuMasterOpenButton then
+		gunMenuMasterOpenButton.Activated:Connect(function()
+			-- Toggle the BoolValue
+			if gunMenuMasterOpenValue then
+				gunMenuMasterOpenValue.Value = not gunMenuMasterOpenValue.Value
+				updateGunMenuVisibility()
+			end
+		end)
+	end
+
+	-- ============================================
+	-- 6. Gun menu selection switching with UIStroke highlighting
+	-- ============================================
+	local function showGunMenuSection(selectionName)
+		if not gunMenuActionSection then return end
+
+		-- Hide all gun menu sections first and make them not interactable
+		for _, child in gunMenuActionSection:GetChildren() do
+			if child:IsA("Frame") and child.Name ~= "UIStroke" then
+				child.Visible = false
+				child.Interactable = false
+			end
+		end
+
+		-- Show the selected section
+		local targetSection = gunMenuActionSection:FindFirstChild(selectionName)
+		if targetSection then
+			targetSection.Visible = true
+			targetSection.Interactable = true
+		else
+			-- Show default (Gunoptions - main menu) if section not found
+			local defaultSection = gunMenuActionSection:FindFirstChild("Gunoptions")
+			if defaultSection then
+				defaultSection.Visible = true
+				defaultSection.Interactable = true
+			end
+		end
+	end
+
+	local function updateGunMenuSelectionHighlight(selectedButton)
+		if not gunMenuSectionSelect then return end
+
+		-- Get the parent frame of the button (Whitelist, Blacklist, etc.)
+		local selectedFrame = selectedButton.Parent
+		local selectedUIStroke = selectedFrame and selectedFrame:FindFirstChild("UIStroke")
+
+		-- Check if this button is already highlighted
+		if selectedUIStroke and selectedUIStroke.Enabled then
+			-- Deselect: disable the UIStroke and show main Gunoptions section
+			selectedUIStroke.Enabled = false
+			gunMenuCurrentSelection = nil
+			showGunMenuSection("Gunoptions")
+			return
+		end
+
+		-- Disable all UIStrokes first
+		for _, child in gunMenuSectionSelect:GetChildren() do
+			if child:IsA("Frame") then
+				local uiStroke = child:FindFirstChild("UIStroke")
+				if uiStroke then
+					uiStroke.Enabled = false
+				end
+			end
+		end
+
+		-- Enable the selected UIStroke
+		if selectedUIStroke then
+			selectedUIStroke.Enabled = true
+		end
+
+		-- Update current selection and show corresponding section
+		gunMenuCurrentSelection = selectedButton.Text
+		showGunMenuSection(gunMenuCurrentSelection)
+	end
+
+	-- Connect all gun menu selection buttons
+	if gunMenuSectionSelect then
+		for _, child in gunMenuSectionSelect:GetChildren() do
+			if child:IsA("Frame") then
+				local textButton = child:FindFirstChild("TextButton")
+				if textButton then
+					textButton.Activated:Connect(function()
+						playClickSound()
+						updateGunMenuSelectionHighlight(textButton)
+					end)
+				end
+			end
+		end
+	end
+
+	-- ============================================
+	-- 7. Drag functionality for Gun menu and Gun icon
+	-- ============================================
+	-- Make Gun menu draggable via Drag frame
+	if gunMenuDragFrame then
+		makeDraggable(gunMenuDragFrame, gunMenu)
+	end
+
+	-- Make Gun icon draggable with special handling for TextButton
+	if gunIcon then
+		makeIconDraggable(gunIcon, gunIconTextButton)
+	end
+
+	-- Initialize gun menu visibility based on master switch state
+	updateGunMenuVisibility()
+
+	-- Initialize with default view (Gunoptions - main menu visible)
+	showGunMenuSection("Gunoptions")
+
+	-- ============================================
+	-- 8. Auto-Openings functionality for Control room
+	-- ============================================
+	local openingsPath = game.Workspace:FindFirstChild("Facility")
+		and game.Workspace.Facility:FindFirstChild("Core")
+		and game.Workspace.Facility.Core:FindFirstChild("Buildings")
+		and game.Workspace.Facility.Core.Buildings:FindFirstChild("CR")
+		and game.Workspace.Facility.Core.Buildings.CR:FindFirstChild("Openings")
+
+	-- Find the Opening lasers section in Control room
+	local openingLasersSection = actionsection
+		and actionsection:FindFirstChild("Control room")
+		and actionsection["Control room"]:FindFirstChild("Opening lasers")
+
+	local autoclickerStateFrame = openingLasersSection and openingLasersSection:FindFirstChild("Autoclickerstate")
+	local autoclickerStateButton = autoclickerStateFrame and autoclickerStateFrame:FindFirstChild("TextButton")
+	local autoclickerStateValue = autoclickerStateFrame and autoclickerStateFrame:FindFirstChild("Open")
+
+	local enabledFrame = openingLasersSection and openingLasersSection:FindFirstChild("Enabled")
+	local enabledButton = enabledFrame and enabledFrame:FindFirstChild("TextButton")
+	local enabledValue = enabledFrame and enabledFrame:FindFirstChild("Enabled")
+
+	-- Track which openings have been toggled to avoid repeated clicks
+	local toggledOpenings = {}
+	local autoOpeningsLoopRunning = false
+
+	-- Function to update the autoclicker button text based on state
+	local function updateAutoclickerButtonText()
+		if autoclickerStateButton and autoclickerStateValue then
+			autoclickerStateButton.Text = autoclickerStateValue.Value and "Open" or "Closed"
+		end
+	end
+
+	-- Function to update the enabled button text based on state
+	local function updateEnabledButtonText()
+		if enabledButton and enabledValue then
+			enabledButton.Text = enabledValue.Value and "Enabled: True" or "Enabled: False"
+		end
+	end
+
+	-- Function to get player's character position
+	local function getPlayerPosition()
+		local character = player.Character
+		if character then
+			local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+			if humanoidRootPart then
+				return humanoidRootPart.Position
+			end
+		end
+		return nil
+	end
+
+	-- Function to check if player is within ClickDetector range of an opening
+	local function isPlayerInRangeOfOpening(opening, playerPosition)
+		local handle = opening:FindFirstChild("Handle")
+		if not handle then return false end
+
+		local click = handle:FindFirstChild("Click")
+		if not click then return false end
+
+		local clickDetector = click:FindFirstChild("ClickDetector")
+		if not clickDetector then return false end
+
+		-- Use the Click part (which is a BasePart) for distance calculation
+		local distance = (playerPosition - click.Position).Magnitude
+		local maxRange = clickDetector.MaxActivationDistance
+		return distance <= maxRange
+	end
+
+	-- Function to fire a ClickDetector
+	local function fireClickDetector(opening)
+		local success, err = pcall(function()
+			local handle = opening:FindFirstChild("Handle")
+			if not handle then return end
+
+			local click = handle:FindFirstChild("Click")
+			if not click then return end
+
+			local clickDetector = click:FindFirstChild("ClickDetector")
+			if not clickDetector then return end
+
+			-- Fire the ClickDetector
+			print("Fired")
+			fireInstance(clickDetector)
+		end)
+		if not success then
+			warn("Failed to fire ClickDetector:", err)
+		end
+	end
+
+	-- Function to check if an opening is open by checking the text on it
+	local function getOpeningStatusText(opening)
+		-- Check the specific path: .Screen.SurfaceGui.TextLabel
+		local screen = opening:FindFirstChild("Screen")
+		if screen then
+			local surfaceGui = screen:FindFirstChild("SurfaceGui")
+			if surfaceGui then
+				local textLabel = surfaceGui:FindFirstChild("TextLabel")
+				if textLabel and textLabel:IsA("TextLabel") then
+					local text = textLabel.Text
+
+					-- Check the text content (case insensitive)
+					local upperText = string.upper(text)
+					if upperText == "OPEN" then
+						return "OPEN"
+					elseif upperText == "CLOSED" then
+						return "CLOSED"
+					elseif upperText == "FAILURE" then
+						return "FAILURE"
+					end
+				end
+			end
+		end
+
+		return "UNKNOWN"
+	end
+
+	-- Main loop for auto-openings
+	-- My god, it was this hard?? I AM SCARED OF THE OTHER S**T
+	local function runAutoOpeningsLoop()
+		if autoOpeningsLoopRunning then
+			return
+		end
+		autoOpeningsLoopRunning = true
+
+		task.spawn(function()
+			while autoOpeningsLoopRunning do
+				-- Check if enabled
+				local isEnabled = enabledValue and enabledValue.Value
+
+				if not isEnabled then
+					task.wait(0.1)
+					continue
+				end
+
+				-- Get player position
+				local playerPos = getPlayerPosition()
+				if not playerPos then
+					task.wait(0.1)
+					continue
+				end
+
+				-- Check if openings path exists
+				local currentOpeningsPath = game.Workspace:FindFirstChild("Facility")
+					and game.Workspace.Facility:FindFirstChild("Core")
+					and game.Workspace.Facility.Core:FindFirstChild("Buildings")
+					and game.Workspace.Facility.Core.Buildings:FindFirstChild("CR")
+					and game.Workspace.Facility.Core.Buildings.CR:FindFirstChild("Openings")
+
+				if currentOpeningsPath then
+					-- Get the desired state from GUI
+					local wantOpen = autoclickerStateValue and autoclickerStateValue.Value or false
+					local wantState = wantOpen and "OPEN" or "CLOSED"
+
+					-- Iterate through all openings
+					for _, opening in ipairs(currentOpeningsPath:GetChildren()) do
+						if opening:IsA("Model") or opening:IsA("Folder") then
+							-- Check if player is in range
+							local inRange = isPlayerInRangeOfOpening(opening, playerPos)
+
+							if inRange then
+								local currentState = getOpeningStatusText(opening)
+
+								-- Determine if we need to toggle
+								local shouldToggle = false
+
+								-- Toggle when the state is not what we want AND not FAILURE
+								if wantState == "OPEN" then
+									if currentState ~= "OPEN" and currentState ~= "FAILURE" then
+										shouldToggle = true
+									end
+								elseif wantState == "CLOSED" then
+									if currentState ~= "CLOSED" and currentState ~= "FAILURE" then
+										shouldToggle = true
+									end
+								end
+
+								if shouldToggle then
+									-- Fire the click detector using the fireInstance function
+									local handle = opening:FindFirstChild("Handle")
+									if handle then
+										local click = handle:FindFirstChild("Click")
+										if click then
+											local clickDetector = click:FindFirstChild("ClickDetector")
+											if clickDetector then
+												fireInstance(clickDetector)
+											end
+										end
+									end
+								end
+							end
+						end
+					end
+				end
+
+				task.wait(0.1)
+			end
+		end)
+	end
+
+	-- Connect the autoclicker state button
+	if autoclickerStateButton then
+		autoclickerStateButton.Activated:Connect(function()
+			if autoclickerStateValue then
+				autoclickerStateValue.Value = not autoclickerStateValue.Value
+				updateAutoclickerButtonText()
+				playClickSound()
+			end
+		end)
+	end
+
+	-- Connect the enabled button
+	if enabledButton then
+		enabledButton.Activated:Connect(function()
+			if enabledValue then
+				enabledValue.Value = not enabledValue.Value
+				updateEnabledButtonText()
+				playClickSound()
+
+				-- Start or stop the loop based on enabled state
+				if enabledValue.Value then
+					runAutoOpeningsLoop()
+				else
+					autoOpeningsLoopRunning = false
+				end
+			end
+		end)
+	end
+
+	-- Initialize button texts
+	updateAutoclickerButtonText()
+	updateEnabledButtonText()
+
+	-- Start the loop if already enabled
+	if enabledValue and enabledValue.Value then
+		runAutoOpeningsLoop()
+	end
+
+	-- ============================================
+	-- 9. Anti-matter lasers autoclicker functionality
+	-- ============================================
+	-- FOR THE GODS LOVE PLEASE WORK IM TIRED OF FALSE POSITIVES
+	local antiMatterLasersSection = actionsection
+		and actionsection:FindFirstChild("Control room")
+		and actionsection["Control room"]:FindFirstChild("Anti-matter lasers")
+
+	local antiAutoclickerStateFrame = antiMatterLasersSection and antiMatterLasersSection:FindFirstChild("Autoclickerstate")
+	local antiAutoclickerStateButton = antiAutoclickerStateFrame and antiAutoclickerStateFrame:FindFirstChild("TextButton")
+	local antiAutoclickerStateValue = antiAutoclickerStateFrame and antiAutoclickerStateFrame:FindFirstChild("On")
+
+	local antiEnabledFrame = antiMatterLasersSection and antiMatterLasersSection:FindFirstChild("Enabled")
+	local antiEnabledButton = antiEnabledFrame and antiEnabledFrame:FindFirstChild("TextButton")
+	local antiEnabledValue = antiEnabledFrame and antiEnabledFrame:FindFirstChild("Enabled")
+
+	local antiAutoclickerLoopRunning = false
+
+	-- Function to update the anti-matter autoclicker state button text
+	local function updateAntiAutoclickerStateButtonText()
+		if antiAutoclickerStateButton and antiAutoclickerStateValue then
+			antiAutoclickerStateButton.Text = antiAutoclickerStateValue.Value and "On" or "Off"
+		end
+	end
+
+	-- Function to update the anti-matter enabled button text
+	local function updateAntiEnabledButtonText()
+		if antiEnabledButton and antiEnabledValue then
+			antiEnabledButton.Text = antiEnabledValue.Value and "Enabled: True" or "Enabled: False"
+		end
+	end
+
+	-- Function to check if player is within ClickDetector range of an anti-matter lever
+	local function isPlayerInRangeOfAntiLever(antiLever, playerPosition)
+		local handle = antiLever:FindFirstChild("Handle")
+		if not handle then return false end
+
+		local union = handle:FindFirstChild("Union")
+		if not union then return false end
+
+		local clickDetector = union:FindFirstChild("ClickDetector")
+		if not clickDetector then return false end
+
+		local distance = (playerPosition - union.Position).Magnitude
+		local maxRange = clickDetector.MaxActivationDistance
+		return distance <= maxRange
+	end
+
+	-- Function to get status text from a specific AntiLever model
+	local function getAntiLeverModelStatus(antiLever)
+		local screen = antiLever:FindFirstChild("Screen")
+		if screen then
+			local surfaceGui = screen:FindFirstChild("SurfaceGui")
+			if surfaceGui then
+				local textLabel = surfaceGui:FindFirstChild("TextLabel")
+				if textLabel and textLabel:IsA("TextLabel") then
+					return string.upper(textLabel.Text)
+				end
+			end
+		end
+		return "UNKNOWN"
+	end
+
+
+	-- Main loop for anti-matter lasers autoclicker
+	local function runAntiMatterAutoclickerLoop()
+		if antiAutoclickerLoopRunning then
+			return
+		end
+		antiAutoclickerLoopRunning = true
+
+		task.spawn(function()
+			while antiAutoclickerLoopRunning do
+				-- Check if enabled
+				local isEnabled = antiEnabledValue and antiEnabledValue.Value
+
+				if not isEnabled then
+					task.wait(0.1)
+					continue
+				end
+
+				-- Get player position
+				local playerPos = getPlayerPosition()
+				if not playerPos then
+					task.wait(0.1)
+					continue
+				end
+
+				-- Get desired state from GUI (On = true means we want ENABLED, On = false means we want DISABLED)
+				local wantEnabled = antiAutoclickerStateValue and antiAutoclickerStateValue.Value or false
+
+				-- Get the anti-matter laser path
+				local antiMatterPath = game.Workspace:FindFirstChild("Facility")
+					and game.Workspace.Facility:FindFirstChild("Core")
+					and game.Workspace.Facility.Core:FindFirstChild("Buildings")
+					and game.Workspace.Facility.Core.Buildings:FindFirstChild("ControlRoom")
+					and game.Workspace.Facility.Core.Buildings.ControlRoom:FindFirstChild("Controls")
+					and game.Workspace.Facility.Core.Buildings.ControlRoom.Controls:FindFirstChild("Actual")
+					and game.Workspace.Facility.Core.Buildings.ControlRoom.Controls.Actual:FindFirstChild("Anti")
+
+				if antiMatterPath then
+					-- Iterate through each AntiLever model individually
+					for _, antiLever in ipairs(antiMatterPath:GetChildren()) do
+						if antiLever.Name == "AntiLever" and (antiLever:IsA("Model") or antiLever:IsA("Folder")) then
+							-- Check if player is in range of this specific AntiLever
+							if isPlayerInRangeOfAntiLever(antiLever, playerPos) then
+								local currentStatus = getAntiLeverModelStatus(antiLever)
+
+								-- Check for skip conditions for this specific AntiLever
+								if currentStatus == "BROKEN" or currentStatus == "OVERLOAD" or currentStatus == "OVERLOADED" or currentStatus == "FAILURE" then
+									-- Skip this AntiLever, continue to next
+									continue
+								end
+
+								-- Determine if we need to toggle this specific AntiLever
+								local shouldToggle = false
+
+								if wantEnabled then
+									-- We want lasers ENABLED: click if text is NOT "ENABLED"
+									if currentStatus ~= "ENABLED" then
+										shouldToggle = true
+									end
+								else
+									-- We want lasers DISABLED: click if text is NOT "DISABLED"
+									if currentStatus ~= "DISABLED" then
+										shouldToggle = true
+									end
+								end
+
+								if shouldToggle then
+									-- Fire the ClickDetector for this specific AntiLever
+									local handle = antiLever:FindFirstChild("Handle")
+									if handle then
+										local union = handle:FindFirstChild("Union")
+										if union then
+											local clickDetector = union:FindFirstChild("ClickDetector")
+											if clickDetector then
+												fireInstance(clickDetector)
+											end
+										end
+									end
+								end
+							end
+						end
+					end
+				end
+
+				task.wait(0.1)
+			end
+		end)
+	end
+
+	-- Connect the anti-matter autoclicker state button
+	if antiAutoclickerStateButton then
+		antiAutoclickerStateButton.Activated:Connect(function()
+			if antiAutoclickerStateValue then
+				antiAutoclickerStateValue.Value = not antiAutoclickerStateValue.Value
+				updateAntiAutoclickerStateButtonText()
+				playClickSound()
+			end
+		end)
+	end
+
+	-- Connect the anti-matter enabled button
+	if antiEnabledButton then
+		antiEnabledButton.Activated:Connect(function()
+			if antiEnabledValue then
+				antiEnabledValue.Value = not antiEnabledValue.Value
+				updateAntiEnabledButtonText()
+				playClickSound()
+
+				-- Start or stop the loop based on enabled state
+				if antiEnabledValue.Value then
+					runAntiMatterAutoclickerLoop()
+				else
+					antiAutoclickerLoopRunning = false
+				end
+			end
+		end)
+	end
+
+	-- Initialize button texts
+	updateAntiAutoclickerStateButtonText()
+	updateAntiEnabledButtonText()
+
+	-- Start the loop if already enabled
+	if antiEnabledValue and antiEnabledValue.Value then
+		runAntiMatterAutoclickerLoop()
+	end
+
+	-- ============================================
+	-- 10. Heat lasers autoclicker functionality
+	-- ============================================
+	-- WHY THE **CK IS IT CALLED "LIGHTS" INTERNALLY LIKE WHAT WERE YOU SMOKING WHILE MAKING THIS **IT?
+	local heatLasersSection = actionsection
+		and actionsection:FindFirstChild("Control room")
+		and actionsection["Control room"]:FindFirstChild("Heat lasers")
+
+	local heatAutoclickerStateFrame = heatLasersSection and heatLasersSection:FindFirstChild("Autoclickerstate")
+	local heatAutoclickerStateButton = heatAutoclickerStateFrame and heatAutoclickerStateFrame:FindFirstChild("TextButton")
+	local heatAutoclickerStateValue = heatAutoclickerStateFrame and heatAutoclickerStateFrame:FindFirstChild("On")
+
+	local heatEnabledFrame = heatLasersSection and heatLasersSection:FindFirstChild("Enabled")
+	local heatEnabledButton = heatEnabledFrame and heatEnabledFrame:FindFirstChild("TextButton")
+	local heatEnabledValue = heatEnabledFrame and heatEnabledFrame:FindFirstChild("Enabled")
+
+	local heatAutoclickerLoopRunning = false
+
+	-- Function to update the heat autoclicker state button text
+	local function updateHeatAutoclickerStateButtonText()
+		if heatAutoclickerStateButton and heatAutoclickerStateValue then
+			heatAutoclickerStateButton.Text = heatAutoclickerStateValue.Value and "On" or "Off"
+		end
+	end
+
+	-- Function to update the heat enabled button text
+	local function updateHeatEnabledButtonText()
+		if heatEnabledButton and heatEnabledValue then
+			heatEnabledButton.Text = heatEnabledValue.Value and "Enabled: True" or "Enabled: False"
+		end
+	end
+
+	-- Function to check if player is within ClickDetector range of a heat laser
+	local function isPlayerInRangeOfHeatLaser(lightModel, playerPosition)
+		local handle = lightModel:FindFirstChild("Handle")
+		if not handle then return false end
+
+		local union = handle:FindFirstChild("Union")
+		if not union then return false end
+
+		local clickDetector = union:FindFirstChild("ClickDetector")
+		if not clickDetector then return false end
+
+		local distance = (playerPosition - union.Position).Magnitude
+		local maxRange = clickDetector.MaxActivationDistance
+		return distance <= maxRange
+	end
+
+	-- Function to get the heat laser status from the TextLabel
+	-- Returns the status from the first Light found (they should all be in sync)
+	local function getHeatLaserStatusText()
+		local heatLaserPath = game.Workspace:FindFirstChild("Facility")
+			and game.Workspace.Facility:FindFirstChild("Core")
+			and game.Workspace.Facility.Core:FindFirstChild("Buildings")
+			and game.Workspace.Facility.Core.Buildings:FindFirstChild("ControlRoom")
+			and game.Workspace.Facility.Core.Buildings.ControlRoom:FindFirstChild("Controls")
+			and game.Workspace.Facility.Core.Buildings.ControlRoom.Controls:FindFirstChild("Actual")
+			and game.Workspace.Facility.Core.Buildings.ControlRoom.Controls.Actual:FindFirstChild("Lights")
+
+		if not heatLaserPath then
+			return "UNKNOWN"
+		end
+
+		-- Iterate through all Light models to find the status
+		for _, lightModel in ipairs(heatLaserPath:GetChildren()) do
+			if (lightModel.Name:sub(1, 5) == "Light" or lightModel.Name:find("Light")) and (lightModel:IsA("Model") or lightModel:IsA("Folder")) then
+				local screen = lightModel:FindFirstChild("Screen")
+				if screen then
+					local surfaceGui = screen:FindFirstChild("SurfaceGui")
+					if surfaceGui then
+						local textLabel = surfaceGui:FindFirstChild("TextLabel")
+						if textLabel and textLabel:IsA("TextLabel") then
+							local text = string.upper(textLabel.Text)
+							return text
+						end
+					end
+				end
+			end
+		end
+
+		return "UNKNOWN"
+	end
+
+	-- Function to fire the heat laser ClickDetector
+	-- Fires all Light ClickDetectors that are in range to toggle heat lasers
+	local function fireHeatLaserClickDetector(playerPosition)
+		local heatLaserPath = game.Workspace:FindFirstChild("Facility")
+			and game.Workspace.Facility:FindFirstChild("Core")
+			and game.Workspace.Facility.Core:FindFirstChild("Buildings")
+			and game.Workspace.Facility.Core.Buildings:FindFirstChild("ControlRoom")
+			and game.Workspace.Facility.Core.Buildings.ControlRoom:FindFirstChild("Controls")
+			and game.Workspace.Facility.Core.Buildings.ControlRoom.Controls:FindFirstChild("Actual")
+			and game.Workspace.Facility.Core.Buildings.ControlRoom.Controls.Actual:FindFirstChild("Lights")
+
+		if not heatLaserPath then
+			return false
+		end
+
+		local firedAny = false
+
+		-- Iterate through all Light models and fire their ClickDetectors if in range
+		for _, lightModel in ipairs(heatLaserPath:GetChildren()) do
+			if (lightModel.Name:sub(1, 5) == "Light" or lightModel.Name:find("Light")) and (lightModel:IsA("Model") or lightModel:IsA("Folder")) then
+				-- Check if player is in range
+				if isPlayerInRangeOfHeatLaser(lightModel, playerPosition) then
+					local handle = lightModel:FindFirstChild("Handle")
+					if handle then
+						local union = handle:FindFirstChild("Union")
+						if union then
+							local clickDetector = union:FindFirstChild("ClickDetector")
+							if clickDetector then
+								fireInstance(clickDetector)
+								firedAny = true
+							end
+						end
+					end
+				end
+			end
+		end
+
+		return firedAny
+	end
+
+	-- Function to get status text from a specific Light model
+	local function getLightModelStatus(lightModel)
+		local screen = lightModel:FindFirstChild("Screen")
+		if screen then
+			local surfaceGui = screen:FindFirstChild("SurfaceGui")
+			if surfaceGui then
+				local textLabel = surfaceGui:FindFirstChild("TextLabel")
+				if textLabel and textLabel:IsA("TextLabel") then
+					return string.upper(textLabel.Text)
+				end
+			end
+		end
+		return "UNKNOWN"
+	end
+
+	-- Main loop for heat lasers autoclicker
+	local function runHeatLaserAutoclickerLoop()
+		if heatAutoclickerLoopRunning then
+			return
+		end
+		heatAutoclickerLoopRunning = true
+
+		task.spawn(function()
+			while heatAutoclickerLoopRunning do
+				-- Check if enabled
+				local isEnabled = heatEnabledValue and heatEnabledValue.Value
+
+				if not isEnabled then
+					task.wait(0.1)
+					continue
+				end
+
+				-- Get player position
+				local playerPos = getPlayerPosition()
+				if not playerPos then
+					task.wait(0.1)
+					continue
+				end
+
+				-- Get desired state from GUI (On = true means we want ENABLED, On = false means we want DISABLED)
+				local wantEnabled = heatAutoclickerStateValue and heatAutoclickerStateValue.Value or false
+
+				-- Get the heat laser path
+				local heatLaserPath = game.Workspace:FindFirstChild("Facility")
+					and game.Workspace.Facility:FindFirstChild("Core")
+					and game.Workspace.Facility.Core:FindFirstChild("Buildings")
+					and game.Workspace.Facility.Core.Buildings:FindFirstChild("ControlRoom")
+					and game.Workspace.Facility.Core.Buildings.ControlRoom:FindFirstChild("Controls")
+					and game.Workspace.Facility.Core.Buildings.ControlRoom.Controls:FindFirstChild("Actual")
+					and game.Workspace.Facility.Core.Buildings.ControlRoom.Controls.Actual:FindFirstChild("Lights")
+
+				if heatLaserPath then
+					-- Iterate through each Light model individually
+					for _, lightModel in ipairs(heatLaserPath:GetChildren()) do
+						if (lightModel.Name:sub(1, 5) == "Light" or lightModel.Name:find("Light")) and (lightModel:IsA("Model") or lightModel:IsA("Folder")) then
+							-- Check if player is in range of this specific Light
+							if isPlayerInRangeOfHeatLaser(lightModel, playerPos) then
+								local currentStatus = getLightModelStatus(lightModel)
+
+								-- Check for skip conditions for this specific Light
+								if currentStatus == "BROKEN" or currentStatus == "OVERLOAD" or currentStatus == "OVERLOADED" or currentStatus == "FAILURE" then
+									-- Skip this Light, continue to next
+									continue
+								end
+
+								-- Determine if we need to toggle this specific Light
+								local shouldToggle = false
+
+								if wantEnabled then
+									-- We want lasers ENABLED: click if text is NOT "ENABLED"
+									if currentStatus ~= "ENABLED" then
+										shouldToggle = true
+									end
+								else
+									-- We want lasers DISABLED: click if text is NOT "DISABLED"
+									if currentStatus ~= "DISABLED" then
+										shouldToggle = true
+									end
+								end
+
+								if shouldToggle then
+									-- Fire the ClickDetector for this specific Light
+									local handle = lightModel:FindFirstChild("Handle")
+									if handle then
+										local union = handle:FindFirstChild("Union")
+										if union then
+											local clickDetector = union:FindFirstChild("ClickDetector")
+											if clickDetector then
+												fireInstance(clickDetector)
+											end
+										end
+									end
+								end
+							end
+						end
+					end
+				end
+
+				task.wait(0.1)
+			end
+		end)
+	end
+
+	-- Connect the heat autoclicker state button
+	if heatAutoclickerStateButton then
+		heatAutoclickerStateButton.Activated:Connect(function()
+			if heatAutoclickerStateValue then
+				heatAutoclickerStateValue.Value = not heatAutoclickerStateValue.Value
+				updateHeatAutoclickerStateButtonText()
+				playClickSound()
+			end
+		end)
+	end
+
+	-- Connect the heat enabled button
+	if heatEnabledButton then
+		heatEnabledButton.Activated:Connect(function()
+			if heatEnabledValue then
+				heatEnabledValue.Value = not heatEnabledValue.Value
+				updateHeatEnabledButtonText()
+				playClickSound()
+
+				-- Start or stop the loop based on enabled state
+				if heatEnabledValue.Value then
+					runHeatLaserAutoclickerLoop()
+				else
+					heatAutoclickerLoopRunning = false
+				end
+			end
+		end)
+	end
+
+	-- Initialize button texts
+	updateHeatAutoclickerStateButtonText()
+	updateHeatEnabledButtonText()
+
+	-- Start the loop if already enabled
+	if heatEnabledValue and heatEnabledValue.Value then
+		runHeatLaserAutoclickerLoop()
+	end
+
+	-- ============================================
+	-- 11. Coolant lasers autoclicker functionality
+	-- ============================================
+	-- I AM GOING TO LOSE MY B*L** WHY IS THIS SO DAMN COMPLEX AAAAAAAAAAAAAAAAA
+	local coolantLasersSection = actionsection
+		and actionsection:FindFirstChild("Control room")
+		and actionsection["Control room"]:FindFirstChild("Auto coolant lasers")
+
+	local coolantAutoclickerStateFrame = coolantLasersSection and coolantLasersSection:FindFirstChild("Autoclickerstate")
+	local coolantAutoclickerStateButton = coolantAutoclickerStateFrame and coolantAutoclickerStateFrame:FindFirstChild("TextButton")
+	local coolantAutoclickerStateValue = coolantAutoclickerStateFrame and coolantAutoclickerStateFrame:FindFirstChild("State")
+
+	local coolantEnabledFrame = coolantLasersSection and coolantLasersSection:FindFirstChild("Enabled")
+	local coolantEnabledButton = coolantEnabledFrame and coolantEnabledFrame:FindFirstChild("TextButton")
+	local coolantEnabledValue = coolantEnabledFrame and coolantEnabledFrame:FindFirstChild("Enabled")
+
+	local coolantAutoclickerLoopRunning = false
+
+	-- State cycle: 0 (Off) -> 25 -> 50 -> 75 -> 100 -> 0 (Off)
+	local coolantStates = {0, 25, 50, 75, 100}
+	local currentCoolantStateIndex = 1
+
+	-- ============================================
+	-- Helper functions for BoolValue state management
+	-- ============================================
+	-- Function to get all state BoolValues from the Autoclickerstate frame
+	local function getCoolantStateBoolValues()
+		if not coolantAutoclickerStateFrame then return {} end
+
+		local boolValues = {}
+		boolValues[0] = coolantAutoclickerStateFrame:FindFirstChild("Off")
+		boolValues[25] = coolantAutoclickerStateFrame:FindFirstChild("25%")
+		boolValues[50] = coolantAutoclickerStateFrame:FindFirstChild("50%")
+		boolValues[75] = coolantAutoclickerStateFrame:FindFirstChild("75%")
+		boolValues[100] = coolantAutoclickerStateFrame:FindFirstChild("100%")
+
+		return boolValues
+	end
+
+	-- Function to check if any BoolValue is enabled
+	-- Returns the percentage of the enabled BoolValue, or nil if none are enabled
+	local function getEnabledCoolantStatePercentage()
+		local boolValues = getCoolantStateBoolValues()
+
+		for percentage, boolValue in pairs(boolValues) do
+			if boolValue and boolValue:IsA("BoolValue") and boolValue.Value then
+				return percentage
+			end
+		end
+
+		return nil -- No BoolValue is enabled
+	end
+
+	-- Function to ensure at least one BoolValue is enabled
+	-- If none are enabled, enables the "Off" BoolValue
+	-- Returns the percentage that is now enabled
+	local function ensureCoolantStateEnabled()
+		local currentPercentage = getEnabledCoolantStatePercentage()
+
+		if currentPercentage == nil then
+			-- No BoolValue is enabled, enable "Off"
+			local boolValues = getCoolantStateBoolValues()
+			local offBoolValue = boolValues[0]
+
+			if offBoolValue and offBoolValue:IsA("BoolValue") then
+				offBoolValue.Value = true
+				return 0
+			end
+		end
+
+		return currentPercentage
+	end
+
+	-- Function to set a specific state BoolValue to true and disable all others
+	local function setCoolantStatePercentage(percentage)
+		local boolValues = getCoolantStateBoolValues()
+
+		-- Disable all BoolValues first
+		for pct, boolValue in pairs(boolValues) do
+			if boolValue and boolValue:IsA("BoolValue") then
+				boolValue.Value = false
+			end
+		end
+
+		-- Enable the target BoolValue
+		local targetBoolValue = boolValues[percentage]
+		if targetBoolValue and targetBoolValue:IsA("BoolValue") then
+			targetBoolValue.Value = true
+		end
+	end
+
+	-- Position thresholds for each laser (Z coordinate based)
+	-- Laser 1 positions
+	local laser1Positions = {
+		[0] = 182.60122680664062,
+		[25] = 183.2942352294922,
+		[50] = 183.9242401123047,
+		[75] = 184.55426025390625,
+		[100] = 185.18423461914062
+	}
+
+	-- Laser 2 positions
+	local laser2Positions = {
+		[0] = 182.47621154785156,
+		[25] = 183.16921997070312,
+		[50] = 183.7991943359375,
+		[75] = 184.4292449951172,
+		[100] = 185.05921936035156
+	}
+
+	-- Function to update the coolant autoclicker state button text
+	local function updateCoolantAutoclickerStateButtonText()
+		if coolantAutoclickerStateButton then
+			-- Ensure at least one BoolValue is enabled
+			ensureCoolantStateEnabled()
+
+			local stateValue = getEnabledCoolantStatePercentage() or 0
+			if stateValue == 0 then
+				coolantAutoclickerStateButton.Text = "Off"
+			else
+				coolantAutoclickerStateButton.Text = stateValue .. "%"
+			end
+		end
+	end
+
+	-- Function to update the coolant enabled button text
+	local function updateCoolantEnabledButtonText()
+		if coolantEnabledButton and coolantEnabledValue then
+			coolantEnabledButton.Text = coolantEnabledValue.Value and "Enabled: True" or "Enabled: False"
+		end
+	end
+
+	-- Function to check if player is within ClickDetector range of a coolant laser
+	local function isPlayerInRangeOfCoolantLaser(coolantLaser, playerPosition)
+		local success, result = pcall(function()
+			local buttons = coolantLaser:FindFirstChild("Buttons")
+			if not buttons then return false end
+
+			-- Check any button for range (they should all have similar ClickDetectors)
+			for _, button in ipairs(buttons:GetChildren()) do
+				if button:IsA("BasePart") then
+					local clickDetector = button:FindFirstChild("ClickDetector")
+					if clickDetector then
+						local distance = (playerPosition - button.Position).Magnitude
+						local maxRange = clickDetector.MaxActivationDistance
+						return distance <= maxRange
+					end
+				end
+			end
+			return false
+		end)
+		return success and result or false
+	end
+
+	-- Function to get the switch position Z coordinate for a coolant laser
+	local function getCoolantLaserSwitchPosition(coolantLaser)
+		local success, result = pcall(function()
+			local handle = coolantLaser:FindFirstChild("Handle")
+			if not handle then return nil end
+
+			local main = handle:FindFirstChild("Main")
+			if not main then return nil end
+
+			return main.Position.Z
+		end)
+		return success and result or nil
+	end
+
+	-- Function to determine the current percentage state based on Z position
+	local function getCoolantLaserPercentageFromPosition(zPosition, laserIndex)
+		local positions = laserIndex == 1 and laser1Positions or laser2Positions
+		local tolerance = 0.3 -- Tolerance for position comparison
+
+		for percentage, targetZ in pairs(positions) do
+			if math.abs(zPosition - targetZ) <= tolerance then
+				return percentage
+			end
+		end
+
+		return nil -- Unknown position
+	end
+
+	-- Function to fire the appropriate button based on desired percentage
+	local function fireCoolantLaserButton(coolantLaser, desiredPercentage)
+		local success, err = pcall(function()
+			local buttons = coolantLaser:FindFirstChild("Buttons")
+			if not buttons then return end
+
+			-- Find the button for the desired percentage
+			local buttonName = tostring(desiredPercentage)
+			local targetButton = buttons:FindFirstChild(buttonName)
+			if targetButton then
+				local clickDetector = targetButton:FindFirstChild("ClickDetector")
+				if clickDetector then
+					fireInstance(clickDetector)
+				end
+			end
+		end)
+		if not success then
+			warn("Failed to fire coolant laser button:", err)
+		end
+	end
+
+	-- Main loop for coolant lasers autoclicker
+	local function runCoolantLaserAutoclickerLoop()
+		if coolantAutoclickerLoopRunning then
+			return
+		end
+		coolantAutoclickerLoopRunning = true
+
+		task.spawn(function()
+			while coolantAutoclickerLoopRunning do
+				-- Check if enabled
+				local isEnabled = coolantEnabledValue and coolantEnabledValue.Value
+
+				if not isEnabled then
+					task.wait(0.1)
+					continue
+				end
+
+				-- Get player position
+				local playerPos = getPlayerPosition()
+				if not playerPos then
+					task.wait(0.1)
+					continue
+				end
+
+				-- Ensure at least one BoolValue is enabled, get desired percentage from GUI
+				ensureCoolantStateEnabled()
+				local desiredPercentage = getEnabledCoolantStatePercentage() or 0
+
+				-- Get the coolant laser path
+				local success, coolantLaserPath = pcall(function()
+					return game.Workspace:FindFirstChild("Facility")
+						and game.Workspace.Facility:FindFirstChild("Core")
+						and game.Workspace.Facility.Core:FindFirstChild("Buildings")
+						and game.Workspace.Facility.Core.Buildings:FindFirstChild("CR")
+						and game.Workspace.Facility.Core.Buildings.CR:FindFirstChild("Coolant")
+				end)
+
+				if success and coolantLaserPath then
+					-- Iterate through each coolant laser
+					for _, coolantLaser in ipairs(coolantLaserPath:GetChildren()) do
+						if coolantLaser:IsA("Model") or coolantLaser:IsA("Folder") then
+							-- Determine which laser this is (1 or 2) based on name
+							local laserIndex = 1
+							local laserName = string.lower(coolantLaser.Name)
+							if laserName:find("2") or laserName:find("two") then
+								laserIndex = 2
+							end
+
+							-- Check if player is in range of this coolant laser
+							if isPlayerInRangeOfCoolantLaser(coolantLaser, playerPos) then
+								-- Get current switch position
+								local currentZ = getCoolantLaserSwitchPosition(coolantLaser)
+								if currentZ then
+									-- Determine current percentage from position
+									local currentPercentage = getCoolantLaserPercentageFromPosition(currentZ, laserIndex)
+
+									-- If we can determine current state and it doesn't match desired, fire the button
+									if currentPercentage ~= nil and currentPercentage ~= desiredPercentage then
+										fireCoolantLaserButton(coolantLaser, desiredPercentage)
+									end
+								end
+							end
+						end
+					end
+				end
+
+				task.wait(0.1)
+			end
+		end)
+	end
+
+	-- Connect the coolant autoclicker state button (cycles through states)
+	if coolantAutoclickerStateButton then
+		coolantAutoclickerStateButton.Activated:Connect(function()
+			-- Ensure at least one BoolValue is enabled
+			ensureCoolantStateEnabled()
+
+			-- Find current state index and move to next
+			local currentState = getEnabledCoolantStatePercentage() or 0
+			local currentIndex = 1
+			for i, state in ipairs(coolantStates) do
+				if state == currentState then
+					currentIndex = i
+					break
+				end
+			end
+
+			-- Move to next state (cycle back to 1 if at end)
+			local nextIndex = currentIndex + 1
+			if nextIndex > #coolantStates then
+				nextIndex = 1
+			end
+
+			-- Set the new state using BoolValues
+			setCoolantStatePercentage(coolantStates[nextIndex])
+			updateCoolantAutoclickerStateButtonText()
+			playClickSound()
+		end)
+	end
+
+	-- Connect the coolant enabled button
+	if coolantEnabledButton then
+		coolantEnabledButton.Activated:Connect(function()
+			if coolantEnabledValue then
+				coolantEnabledValue.Value = not coolantEnabledValue.Value
+				updateCoolantEnabledButtonText()
+				playClickSound()
+
+				-- Start or stop the loop based on enabled state
+				if coolantEnabledValue.Value then
+					runCoolantLaserAutoclickerLoop()
+				else
+					coolantAutoclickerLoopRunning = false
+				end
+			end
+		end)
+	end
+
+	-- Initialize button texts
+	updateCoolantAutoclickerStateButtonText()
+	updateCoolantEnabledButtonText()
+
+	-- Start the loop if already enabled
+	if coolantEnabledValue and coolantEnabledValue.Value then
+		runCoolantLaserAutoclickerLoop()
+	end
+	-- Control room autoclicker section is complete, no changes needed for anything above
+	-- Heres the following features to add to the core status section:
+	-- For displaying the core status, we need to add the following:
+	-- Essential information will use the direct information obtainment from VALUES folder, except the safeguard has a custom directory
+	-- Useless/less important information will use textlabels from the SurfaceGuis
+	-- Wrap in pcall so incase it fails to get information the script continues working
+	-- 1. Safeguard monitoring: Display the current safeguard state and cells amount
+	-- Path for status: game.Workspace.Facility.Core.Buildings.ControlRoom.Controls.TV.GravScreen.Vals.Status
+	-- Path for cells: game.Workspace.Facility.Core.Buildings.ControlRoom.Controls.TV.GravScreen.Vals.Cells
+	-- Integrity monitoring: Display the current integrity value
+	-- Path for integrity: game.Workspace.Facility.Core.VALUES.Variables.Stability
+	-- Path for temperature: game.Workspace.Facility.Core.VALUES.Variables.Temperature
+	-- Remember to put .Value at the end of thegame.Workspace.Facility.Core.Buildings.ControlRoom.Controls.TV path for the values
+	-- The less important values are at game.Workspace.Facility.Core.Buildings.ControlRoom.Controls.TV
+	-- on integrity, put "%" after the integrity value so for example its 77%, for temperature put a K at the end since it uses kelvin, so its like 12030K, make sure the K is uppercase
+
+	-- ============================================
+	-- 9. Core status monitoring
+	-- ============================================
+
+	-- Find the Core status section elements
+	local coreStatusSection = actionsection and actionsection:FindFirstChild("Core status")
+	local safeguardDisplayFrame = coreStatusSection and coreStatusSection:FindFirstChild("Safeguard display")
+	local coreIntegrityFrame = coreStatusSection and coreStatusSection:FindFirstChild("Core integrity")
+	local sphereTemperatureFrame = coreStatusSection and coreStatusSection:FindFirstChild("Sphere temperature")
+	local energyPerOpeningFrame = coreStatusSection and coreStatusSection:FindFirstChild("Energy per Opening")
+	local coreGenerationFrame = coreStatusSection and coreStatusSection:FindFirstChild("Core Generation")
+	local emergencyGeneratorFrame = coreStatusSection and coreStatusSection:FindFirstChild("Emergency Generator")
+	local inSphereFrame = coreStatusSection and coreStatusSection:FindFirstChild("In Sphere")
+	local totalGenerationFrame = coreStatusSection and coreStatusSection:FindFirstChild("Total Generation")
+
+	-- Get the TextLabels for displaying values
+	local safeguardDisplayLabel = safeguardDisplayFrame and safeguardDisplayFrame:FindFirstChild("Display") and safeguardDisplayFrame.Display:FindFirstChild("Display")
+	local coreIntegrityDisplayLabel = coreIntegrityFrame and coreIntegrityFrame:FindFirstChild("Display") and coreIntegrityFrame.Display:FindFirstChild("Display")
+	local sphereTemperatureDisplayLabel = sphereTemperatureFrame and sphereTemperatureFrame:FindFirstChild("Display") and sphereTemperatureFrame.Display:FindFirstChild("Display")
+	local energyPerOpeningDisplayLabel = energyPerOpeningFrame and energyPerOpeningFrame:FindFirstChild("Display") and energyPerOpeningFrame.Display:FindFirstChild("Display")
+	local coreGenerationDisplayLabel = coreGenerationFrame and coreGenerationFrame:FindFirstChild("Display") and coreGenerationFrame.Display:FindFirstChild("Display")
+	local emergencyGeneratorDisplayLabel = emergencyGeneratorFrame and emergencyGeneratorFrame:FindFirstChild("Display") and emergencyGeneratorFrame.Display:FindFirstChild("Display")
+	local inSphereDisplayLabel = inSphereFrame and inSphereFrame:FindFirstChild("Display") and inSphereFrame.Display:FindFirstChild("Display")
+	local totalGenerationDisplayLabel = totalGenerationFrame and totalGenerationFrame:FindFirstChild("Display") and totalGenerationFrame.Display:FindFirstChild("Display")
+
+	-- Get the BoolValues for toggling display
+	local safeguardDisplayBool = safeguardDisplayFrame and safeguardDisplayFrame:FindFirstChild("Displaying") and safeguardDisplayFrame.Displaying:FindFirstChild("Display")
+	local coreIntegrityDisplayBool = coreIntegrityFrame and coreIntegrityFrame:FindFirstChild("Displaying") and coreIntegrityFrame.Displaying:FindFirstChild("Display")
+	local sphereTemperatureDisplayBool = sphereTemperatureFrame and sphereTemperatureFrame:FindFirstChild("Displaying") and sphereTemperatureFrame.Displaying:FindFirstChild("Display")
+	local energyPerOpeningDisplayBool = energyPerOpeningFrame and energyPerOpeningFrame:FindFirstChild("Displaying") and energyPerOpeningFrame.Displaying:FindFirstChild("Display")
+	local coreGenerationDisplayBool = coreGenerationFrame and coreGenerationFrame:FindFirstChild("Displaying") and coreGenerationFrame.Displaying:FindFirstChild("Display")
+	local emergencyGeneratorDisplayBool = emergencyGeneratorFrame and emergencyGeneratorFrame:FindFirstChild("Displaying") and emergencyGeneratorFrame.Displaying:FindFirstChild("Display")
+	local inSphereDisplayBool = inSphereFrame and inSphereFrame:FindFirstChild("Displaying") and inSphereFrame.Displaying:FindFirstChild("Display")
+	local totalGenerationDisplayBool = totalGenerationFrame and totalGenerationFrame:FindFirstChild("Displaying") and totalGenerationFrame.Displaying:FindFirstChild("Display")
+
+	-- Get the TextButtons for toggling
+	local safeguardToggleButton = safeguardDisplayFrame and safeguardDisplayFrame:FindFirstChild("Displaying") and safeguardDisplayFrame.Displaying:FindFirstChild("TextButton")
+	local coreIntegrityToggleButton = coreIntegrityFrame and coreIntegrityFrame:FindFirstChild("Displaying") and coreIntegrityFrame.Displaying:FindFirstChild("TextButton")
+	local sphereTemperatureToggleButton = sphereTemperatureFrame and sphereTemperatureFrame:FindFirstChild("Displaying") and sphereTemperatureFrame.Displaying:FindFirstChild("TextButton")
+	local energyPerOpeningToggleButton = energyPerOpeningFrame and energyPerOpeningFrame:FindFirstChild("Displaying") and energyPerOpeningFrame.Displaying:FindFirstChild("TextButton")
+	local coreGenerationToggleButton = coreGenerationFrame and coreGenerationFrame:FindFirstChild("Displaying") and coreGenerationFrame.Displaying:FindFirstChild("TextButton")
+	local emergencyGeneratorToggleButton = emergencyGeneratorFrame and emergencyGeneratorFrame:FindFirstChild("Displaying") and emergencyGeneratorFrame.Displaying:FindFirstChild("TextButton")
+	local inSphereToggleButton = inSphereFrame and inSphereFrame:FindFirstChild("Displaying") and inSphereFrame.Displaying:FindFirstChild("TextButton")
+	local totalGenerationToggleButton = totalGenerationFrame and totalGenerationFrame:FindFirstChild("Displaying") and totalGenerationFrame.Displaying:FindFirstChild("TextButton")
+
+	-- Function to get safeguard status and cells
+	local function getSafeguardInfo()
+		local success, result = pcall(function()
+			local statusPath = game.Workspace:FindFirstChild("Facility")
+				and game.Workspace.Facility.Core:FindFirstChild("Buildings")
+				and game.Workspace.Facility.Core.Buildings:FindFirstChild("ControlRoom")
+				and game.Workspace.Facility.Core.Buildings.ControlRoom:FindFirstChild("Controls")
+				and game.Workspace.Facility.Core.Buildings.ControlRoom.Controls:FindFirstChild("TV")
+				and game.Workspace.Facility.Core.Buildings.ControlRoom.Controls.TV:FindFirstChild("GravScreen")
+				and game.Workspace.Facility.Core.Buildings.ControlRoom.Controls.TV.GravScreen:FindFirstChild("Vals")
+
+			if not statusPath then return nil end
+
+			local statusValue = statusPath:FindFirstChild("Status")
+			local cellsValue = statusPath:FindFirstChild("Cells")
+
+			local status = statusValue and statusValue.Value or nil
+			local cells = cellsValue and cellsValue.Value or nil
+
+			return {status = status, cells = cells}
+		end)
+
+		if success and result then
+			return result.status, result.cells
+		else
+			return nil, nil
+		end
+	end
+
+	-- Function to get core integrity
+	local function getCoreIntegrity()
+		local success, result = pcall(function()
+			local integrityPath = game.Workspace:FindFirstChild("Facility")
+				and game.Workspace.Facility:FindFirstChild("Core")
+				and game.Workspace.Facility.Core:FindFirstChild("VALUES")
+				and game.Workspace.Facility.Core.VALUES:FindFirstChild("Variables")
+				and game.Workspace.Facility.Core.VALUES.Variables:FindFirstChild("Stability")
+
+			if integrityPath then
+				return integrityPath.Value
+			end
+			return nil
+		end)
+
+		if success then
+			return result
+		else
+			return nil
+		end
+	end
+
+	-- Function to get sphere temperature
+	local function getSphereTemperature()
+		local success, result = pcall(function()
+			local tempPath = game.Workspace:FindFirstChild("Facility")
+				and game.Workspace.Facility:FindFirstChild("Core")
+				and game.Workspace.Facility.Core:FindFirstChild("VALUES")
+				and game.Workspace.Facility.Core.VALUES:FindFirstChild("Variables")
+				and game.Workspace.Facility.Core.VALUES.Variables:FindFirstChild("Temperature")
+
+			if tempPath then
+				return tempPath.Value
+			end
+			return nil
+		end)
+
+		if success then
+			return result
+		else
+			return nil
+		end
+	end
+
+	-- Function to get value from TV TextLabel by title
+	local function getTVValueByTitle(title)
+		local success, result = pcall(function()
+			local tvFolder = game.Workspace:FindFirstChild("Facility")
+				and game.Workspace.Facility.Core:FindFirstChild("Buildings")
+				and game.Workspace.Facility.Core.Buildings:FindFirstChild("ControlRoom")
+				and game.Workspace.Facility.Core.Buildings.ControlRoom:FindFirstChild("Controls")
+				and game.Workspace.Facility.Core.Buildings.ControlRoom.Controls:FindFirstChild("TV")
+
+			if not tvFolder then return nil end
+
+			-- Iterate through all children to find matching TV
+			for _, child in ipairs(tvFolder:GetChildren()) do
+				local screen = child:FindFirstChild("Screen")
+				if screen then
+					local surfaceGui = screen:FindFirstChild("SurfaceGui")
+					if surfaceGui then
+						local textLabel = surfaceGui:FindFirstChild("TextLabel")
+						local valueLabel = surfaceGui:FindFirstChild("Value")
+						if textLabel and valueLabel then
+							-- Check if title matches (case-insensitive, ignoring extra spaces)
+							local labelTitle = textLabel.Text:gsub("%s+", " "):match("^%s*(.-)%s*$")
+							local cleanTitle = title:gsub("%s+", " "):match("^%s*(.-)%s*$")
+							if labelTitle:lower() == cleanTitle:lower() then
+								return valueLabel.Text
+							end
+						end
+					end
+				end
+			end
+
+			return nil
+		end)
+
+		if success then
+			return result
+		else
+			return nil
+		end
+	end
+
+	-- Function to update safeguard display
+	local function updateSafeguardDisplay()
+		if not safeguardDisplayLabel then return end
+		if safeguardDisplayBool and not safeguardDisplayBool.Value then
+			safeguardDisplayLabel.Text = "Displaying off"
+			return
+		end
+
+		local status, cells = getSafeguardInfo()
+		if status ~= nil and cells ~= nil then
+			safeguardDisplayLabel.Text = tostring(status) .. " | " .. tostring(cells)
+		else
+			safeguardDisplayLabel.Text = "N/A"
+		end
+	end
+
+	-- Function to update core integrity display
+	local function updateCoreIntegrityDisplay()
+		if not coreIntegrityDisplayLabel then return end
+		if coreIntegrityDisplayBool and not coreIntegrityDisplayBool.Value then
+			coreIntegrityDisplayLabel.Text = "Displaying off"
+			return
+		end
+
+		local integrity = getCoreIntegrity()
+		if integrity then
+			coreIntegrityDisplayLabel.Text = tostring(integrity) .. "%"
+		else
+			coreIntegrityDisplayLabel.Text = "N/A"
+		end
+	end
+
+	-- Function to update sphere temperature display
+	local function updateSphereTemperatureDisplay()
+		if not sphereTemperatureDisplayLabel then return end
+		if sphereTemperatureDisplayBool and not sphereTemperatureDisplayBool.Value then
+			sphereTemperatureDisplayLabel.Text = "Displaying off"
+			return
+		end
+
+		local temperature = getSphereTemperature()
+		if temperature then
+			-- Round to 3 decimal places
+			local roundedTemp = math.floor(temperature * 1000 + 0.5) / 1000
+			sphereTemperatureDisplayLabel.Text = tostring(roundedTemp) .. "K"
+		else
+			sphereTemperatureDisplayLabel.Text = "N/A"
+		end
+	end
+
+	-- Function to update energy per opening display
+	local function updateEnergyPerOpeningDisplay()
+		if not energyPerOpeningDisplayLabel then return end
+		if energyPerOpeningDisplayBool and not energyPerOpeningDisplayBool.Value then
+			energyPerOpeningDisplayLabel.Text = "Displaying off"
+			return
+		end
+
+		local value = getTVValueByTitle("Energy per Opening")
+		if value then
+			energyPerOpeningDisplayLabel.Text = value
+		else
+			energyPerOpeningDisplayLabel.Text = "N/A"
+		end
+	end
+
+	-- Function to update core generation display
+	local function updateCoreGenerationDisplay()
+		if not coreGenerationDisplayLabel then return end
+		if coreGenerationDisplayBool and not coreGenerationDisplayBool.Value then
+			coreGenerationDisplayLabel.Text = "Displaying off"
+			return
+		end
+
+		local value = getTVValueByTitle("Core Generation")
+		if value then
+			coreGenerationDisplayLabel.Text = value
+		else
+			coreGenerationDisplayLabel.Text = "N/A"
+		end
+	end
+
+	-- Function to update emergency generator display
+	local function updateEmergencyGeneratorDisplay()
+		if not emergencyGeneratorDisplayLabel then return end
+		if emergencyGeneratorDisplayBool and not emergencyGeneratorDisplayBool.Value then
+			emergencyGeneratorDisplayLabel.Text = "Displaying off"
+			return
+		end
+
+		local value = getTVValueByTitle("Emergency Generator")
+		if value then
+			emergencyGeneratorDisplayLabel.Text = value
+		else
+			emergencyGeneratorDisplayLabel.Text = "N/A"
+		end
+	end
+
+	-- Function to update in sphere display
+	local function updateInSphereDisplay()
+		if not inSphereDisplayLabel then return end
+		if inSphereDisplayBool and not inSphereDisplayBool.Value then
+			inSphereDisplayLabel.Text = "Displaying off"
+			return
+		end
+
+		local value = getTVValueByTitle("In Sphere")
+		if value then
+			inSphereDisplayLabel.Text = value
+		else
+			inSphereDisplayLabel.Text = "N/A"
+		end
+	end
+
+	-- Function to update total generation display
+	local function updateTotalGenerationDisplay()
+		if not totalGenerationDisplayLabel then return end
+		if totalGenerationDisplayBool and not totalGenerationDisplayBool.Value then
+			totalGenerationDisplayLabel.Text = "Displaying off"
+			return
+		end
+
+		local value = getTVValueByTitle("Total Generation")
+		if value then
+			totalGenerationDisplayLabel.Text = value
+		else
+			totalGenerationDisplayLabel.Text = "N/A"
+		end
+	end
+
+	-- Function to update toggle button text
+	local function updateToggleButtonText(button, boolValue)
+		if button and boolValue then
+			button.Text = "Enabled: " .. (boolValue.Value and "True" or "False")
+		end
+	end
+
+	-- Connect toggle buttons
+	if safeguardToggleButton then
+		updateToggleButtonText(safeguardToggleButton, safeguardDisplayBool)
+		safeguardToggleButton.Activated:Connect(function()
+			if safeguardDisplayBool then
+				safeguardDisplayBool.Value = not safeguardDisplayBool.Value
+				updateSafeguardDisplay()
+				updateToggleButtonText(safeguardToggleButton, safeguardDisplayBool)
+				playClickSound()
+			end
+		end)
+	end
+
+	if coreIntegrityToggleButton then
+		updateToggleButtonText(coreIntegrityToggleButton, coreIntegrityDisplayBool)
+		coreIntegrityToggleButton.Activated:Connect(function()
+			if coreIntegrityDisplayBool then
+				coreIntegrityDisplayBool.Value = not coreIntegrityDisplayBool.Value
+				updateCoreIntegrityDisplay()
+				updateToggleButtonText(coreIntegrityToggleButton, coreIntegrityDisplayBool)
+				playClickSound()
+			end
+		end)
+	end
+
+	if sphereTemperatureToggleButton then
+		updateToggleButtonText(sphereTemperatureToggleButton, sphereTemperatureDisplayBool)
+		sphereTemperatureToggleButton.Activated:Connect(function()
+			if sphereTemperatureDisplayBool then
+				sphereTemperatureDisplayBool.Value = not sphereTemperatureDisplayBool.Value
+				updateSphereTemperatureDisplay()
+				updateToggleButtonText(sphereTemperatureToggleButton, sphereTemperatureDisplayBool)
+				playClickSound()
+			end
+		end)
+	end
+
+	if energyPerOpeningToggleButton then
+		updateToggleButtonText(energyPerOpeningToggleButton, energyPerOpeningDisplayBool)
+		energyPerOpeningToggleButton.Activated:Connect(function()
+			if energyPerOpeningDisplayBool then
+				energyPerOpeningDisplayBool.Value = not energyPerOpeningDisplayBool.Value
+				updateEnergyPerOpeningDisplay()
+				updateToggleButtonText(energyPerOpeningToggleButton, energyPerOpeningDisplayBool)
+				playClickSound()
+			end
+		end)
+	end
+
+	if coreGenerationToggleButton then
+		updateToggleButtonText(coreGenerationToggleButton, coreGenerationDisplayBool)
+		coreGenerationToggleButton.Activated:Connect(function()
+			if coreGenerationDisplayBool then
+				coreGenerationDisplayBool.Value = not coreGenerationDisplayBool.Value
+				updateCoreGenerationDisplay()
+				updateToggleButtonText(coreGenerationToggleButton, coreGenerationDisplayBool)
+				playClickSound()
+			end
+		end)
+	end
+
+	if emergencyGeneratorToggleButton then
+		updateToggleButtonText(emergencyGeneratorToggleButton, emergencyGeneratorDisplayBool)
+		emergencyGeneratorToggleButton.Activated:Connect(function()
+			if emergencyGeneratorDisplayBool then
+				emergencyGeneratorDisplayBool.Value = not emergencyGeneratorDisplayBool.Value
+				updateEmergencyGeneratorDisplay()
+				updateToggleButtonText(emergencyGeneratorToggleButton, emergencyGeneratorDisplayBool)
+				playClickSound()
+			end
+		end)
+	end
+
+	if inSphereToggleButton then
+		updateToggleButtonText(inSphereToggleButton, inSphereDisplayBool)
+		inSphereToggleButton.Activated:Connect(function()
+			if inSphereDisplayBool then
+				inSphereDisplayBool.Value = not inSphereDisplayBool.Value
+				updateInSphereDisplay()
+				updateToggleButtonText(inSphereToggleButton, inSphereDisplayBool)
+				playClickSound()
+			end
+		end)
+	end
+
+	if totalGenerationToggleButton then
+		updateToggleButtonText(totalGenerationToggleButton, totalGenerationDisplayBool)
+		totalGenerationToggleButton.Activated:Connect(function()
+			if totalGenerationDisplayBool then
+				totalGenerationDisplayBool.Value = not totalGenerationDisplayBool.Value
+				updateTotalGenerationDisplay()
+				updateToggleButtonText(totalGenerationToggleButton, totalGenerationDisplayBool)
+				playClickSound()
+			end
+		end)
+	end
+
+	-- Start monitoring loop for core status (optimized - only updates when Container is visible)
+	task.spawn(function()
+		while true do
+			-- Only update if Container is visible (not collapsed) 
+			if container and container.Visible then
+				updateSafeguardDisplay()
+				updateCoreIntegrityDisplay()
+				updateSphereTemperatureDisplay()
+				updateEnergyPerOpeningDisplay()
+				updateCoreGenerationDisplay()
+				updateEmergencyGeneratorDisplay()
+				updateInSphereDisplay()
+				updateTotalGenerationDisplay()
+			end
+			task.wait(0.2)
+		end
+	end)
+
+
+
+	
+
+	print("Segment 1 initialized")
+end)
+-- Split up into multiple function segments to prevent out of local registers error
+GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did I not see that, its fixed now
+	local GUISections = {
+		Container = GUI.Value:WaitForChild("Container"),
+		Actionsection = GUI.Value.Container:WaitForChild("Actionsection"),
+		Waypointssection = GUI.Value.Container.Actionsection:WaitForChild("Waypoints"),
+	}
+	local Vars = {
+		sound = GUI.Value:WaitForChild("GuiClick")
+	}
+	local function playClickSound()
+		if Vars.sound then
+			Vars.sound:Stop()
+			Vars.sound:Play()
+		end
+	end
+	-- ============================================
+	-- 12. Priority-based Teleport System (GLOBAL - TOGGLEABLE)
+	-- ============================================
+	-- Priority levels: LOW = 1, MEDIUM = 2, HIGH = 3, CRITICAL = 4
+	-- Higher priority teleports will block lower priority ones
+	-- TOGGLEABLE: Systems can enable/disable priority to block lower priority teleports
+	-- Made global for use across all script segments
+
+	-- Initialize global priority system if not already exists
+	if not _G.WaydroidPriority then
+		_G.WaydroidPriority = {
+			PRIORITY = {
+				NONE = 0,
+				LOW = 1,
+				MEDIUM = 2,
+				HIGH = 3,
+				CRITICAL = 4
+			},
+			-- State tracking
+			activePriority = 0,      -- Current active priority level (0 = none active)
+			activeSystem = nil,      -- Name of system that has priority enabled
+			isLocked = false,        -- Whether priority is currently locked
+
+			-- ============================================
+			-- TOGGLE FUNCTIONS - Enable/Disable priority
+			-- ============================================
+			
+			-- Enable a priority level (blocks lower priorities from teleporting)
+			-- Returns true if successfully enabled, false if blocked by higher priority
+			-- Usage: _G.WaydroidPriority.enablePriority(_G.WaydroidPriority.PRIORITY.MEDIUM, "Auto-ore miner")
+			enablePriority = function(self, priority, systemName)
+				-- If no active priority, allow it
+				if self.activePriority == 0 then
+					self.activePriority = priority
+					self.activeSystem = systemName
+					self.isLocked = true
+					return true
+				end
+
+				-- If new priority is higher or equal, allow it (higher overrides lower)
+				if priority >= self.activePriority then
+					self.activePriority = priority
+					self.activeSystem = systemName
+					self.isLocked = true
+					return true
+				end
+
+				-- Lower priority blocked by higher priority
+				return false
+			end,
+
+			-- Disable the active priority (allows lower priorities to teleport again)
+			-- Usage: _G.WaydroidPriority.disablePriority()
+			disablePriority = function(self)
+				self.activePriority = 0
+				self.activeSystem = nil
+				self.isLocked = false
+			end,
+
+			-- ============================================
+			-- CHECK FUNCTIONS - Query priority state
+			-- ============================================
+
+			-- Check if a teleport can proceed based on current active priority
+			-- Returns true if allowed, false if blocked by higher priority
+			-- Usage: if _G.WaydroidPriority.canTeleport(_G.WaydroidPriority.PRIORITY.LOW) then ...
+			canTeleport = function(self, priority)
+				-- If no active priority, allow all teleports
+				if self.activePriority == 0 then
+					return true
+				end
+
+				-- If new priority is higher or equal, allow it
+				if priority >= self.activePriority then
+					return true
+				end
+
+				-- Lower priority blocked by higher priority
+				return false
+			end,
+
+			-- Check if any priority is currently active
+			-- Returns true if a system has priority enabled
+			isPriorityActive = function(self)
+				return self.activePriority > 0
+			end,
+
+			-- Get the current active priority level
+			getActivePriority = function(self)
+				return self.activePriority
+			end,
+
+			-- Get the name of the system that has priority enabled
+			getActiveSystem = function(self)
+				return self.activeSystem
+			end,
+
+			-- Check if priority is locked
+			isPriorityLocked = function(self)
+				return self.isLocked
+			end,
+
+			-- ============================================
+			-- UTILITY FUNCTIONS
+			-- ============================================
+
+			-- Get priority name from value (for debugging/display)
+			getPriorityName = function(self, priority)
+				for name, value in pairs(self.PRIORITY) do
+					if value == priority then
+						return name
+					end
+				end
+				return "UNKNOWN"
+			end,
+
+			-- Get info about current priority state (for debugging)
+			getDebugInfo = function(self)
+				return {
+					priority = self.activePriority,
+					priorityName = self:getPriorityName(self.activePriority),
+					system = self.activeSystem,
+					isLocked = self.isLocked
+				}
+			end
+		}
+
+		-- Add __index metamethod for easier access
+		setmetatable(_G.WaydroidPriority, {
+			__index = function(t, key)
+				-- Allow calling functions without self if needed
+				if key == "PRIORITY" then return t.PRIORITY end
+				return nil
+			end
+		})
+	end
+
+	-- Create local references for convenience within this segment
+	local TELEPORT_PRIORITY = _G.WaydroidPriority.PRIORITY
+	local canTeleport = function(priority) return _G.WaydroidPriority:canTeleport(priority) end
+	local getPriorityName = function(priority) return _G.WaydroidPriority:getPriorityName(priority) end
+
+	-- ============================================
+	-- 13. Waypoints teleportation functionality
+	-- ============================================
+	-- Find the Waypoints section
+	-- WAYPOINT TELEPORTS USE LOW PRIORITY
+	local sections = {
+		orangesection1 = GUISections.Waypointssection:FindFirstChild("Orangesection1"),
+		greensection1 = GUISections.Waypointssection:FindFirstChild("Greensection1"),
+		orangesection2 = GUISections.Waypointssection:FindFirstChild("Orangesection2"),
+		greensection2 = GUISections.Waypointssection:FindFirstChild("Greensection2"),
+		orangesection3 = GUISections.Waypointssection:FindFirstChild("Orangesection3"),
+		greensection3 = GUISections.Waypointssection:FindFirstChild("Greensection3")
+		}
+	-- ============================================
+	-- WAYPOINT TABLE: Maps button text to teleport position (placeholder: 0,0,0)
+	-- Each entry clearly shows which button affects which waypoint
+	-- ============================================
+	local waypointTeleportPositions = {
+		-- Greensection1 waypoints (9 total)
+		["Teleport to: Core chamber"] = Vector3.new(-121.037, 83.625, 92.037),
+		["Teleport to: Clear in chamber tag"] = Vector3.new(-131.429, 83.625, 98.036),
+		["Teleport to: Outside core airlock"] = Vector3.new(-153.946, 83.625, 111.035),
+		["Teleport to: Alien"] = Vector3.new(-27.75, 178.139, 453.75),
+		["Teleport to: Zombie lab"] = Vector3.new(-158, 179.5, 554),
+		["Teleport to: Outside"] = Vector3.new(114.929, 183.553, 366.53),
+		["Teleport to: Core safeguard"] = Vector3.new(-166, 172.5, 603),
+		["Teleport to: Maintenance room"] = Vector3.new(39, 178.202, 399),
+		["Teleport to: Coolant pump switch"] = Vector3.new(-240, 178.5, 469.75),
+		-- Orangesection1 waypoints (9 total)
+		["Teleport to: Control room"] = Vector3.new(0.231, 177.661, 169.478),
+		["Teleport to: Spawn"] = Vector3.new(2.605, 179.161, 214.451),
+		["Teleport to: Server room"] = Vector3.new(-26.076, 178.312, 303.168),
+		["Teleport to: E. gen switch"] = Vector3.new(-165, 178.501, 314.5),
+		["Teleport to: E. gen 1"] = Vector3.new(-182, 146.5, 322),
+		["Teleport to: E. gen 2"] = Vector3.new(-216.783, 146.5, 322),
+		["Teleport to: Bunker01"] = Vector3.new(414.558, 261.313, 924.41),
+		["Teleport to: Bunker02"] = Vector3.new(-227.625, 463.813, 813.25),
+		["Teleport to: Helicopter"] = Vector3.new(354.352, 212.558, 372.702),
+
+	}
+
+	-- Function to teleport player to a specific position with priority support
+	-- Handles sitting check and unsit before teleporting
+	-- priority: TELEPORT_PRIORITY value (default: LOW)
+	-- teleportName: Name identifier for the teleport (for debugging)
+	-- NOTE: This is a ONE-TIME teleport. For persistent systems (like auto-ore miner),
+	-- use enablePriority/disablePriority to lock the priority during the operation.
+	local function teleportPlayerToPosition(targetPosition, priority, teleportName)
+		-- Default to LOW priority if not specified
+		priority = priority or TELEPORT_PRIORITY.LOW
+		teleportName = teleportName or "Unnamed Teleport"
+
+		-- Check if this teleport can proceed based on current active priority
+		-- If a system has priority enabled (like auto-ore miner), lower priority teleports will be blocked
+		if not canTeleport(priority) then
+			local blockedBy = _G.WaydroidPriority:getActiveSystem() or "unknown"
+			local blockedByPriority = _G.WaydroidPriority:getPriorityName(_G.WaydroidPriority:getActivePriority())
+			print("[Teleport] Blocked: " .. teleportName .. " (priority: " .. getPriorityName(priority) .. ") by " .. blockedBy .. " (priority: " .. blockedByPriority .. ")")
+			return false
+		end
+
+		local character = player.Character
+		if not character then return false end
+
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
+		local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+
+		if not humanoidRootPart then return false end
+
+		-- Check if player is sitting and make them unsit first
+		if humanoid then
+			if humanoid.SeatPart then
+				-- Player is sitting, make them unsit
+				humanoid.Sit = false
+				-- Wait a brief moment for the unsit to take effect
+				task.wait(0.1)
+			end
+		end
+
+		-- Teleport using Vector3.new() for the position
+		humanoidRootPart.CFrame = CFrame.new(Vector3.new(targetPosition.X, targetPosition.Y, targetPosition.Z))
+
+		return true
+	end
+
+	-- Public function for other systems to request teleports with priority
+	-- Usage: requestTeleportWithPriority(position, TELEPORT_PRIORITY.HIGH, "Auto-ore miner")
+	local function requestTeleportWithPriority(targetPosition, priority, teleportName)
+		return teleportPlayerToPosition(targetPosition, priority, teleportName)
+	end
+
+	-- Expose the teleport request function and priority enum globally for other scripts
+	-- This allows the auto-ore miner and other systems to use the priority system
+	_G.WaydroidTeleport = {
+		requestTeleport = requestTeleportWithPriority,
+		PRIORITY = TELEPORT_PRIORITY,
+		getCurrentPriority = function() return _G.WaydroidPriority:getActivePriority() end,
+		getCurrentSystem = function() return _G.WaydroidPriority:getActiveSystem() end,
+		isLocked = function() return _G.WaydroidPriority:isPriorityLocked() end
+	}
+
+	-- Function to handle waypoint button click
+	-- WAYPOINT TELEPORTS USE LOW PRIORITY
+	local function onWaypointButtonClick(button)
+		local buttonText = button.Text
+		local targetPosition = waypointTeleportPositions[buttonText]
+
+		if targetPosition then
+			playClickSound()
+			-- Waypoints use LOW priority - will be blocked by higher priority teleports
+			teleportPlayerToPosition(targetPosition, TELEPORT_PRIORITY.LOW, "Waypoint: " .. buttonText)
+		end
+	end
+
+	-- Connect all waypoint buttons in Orangesection1
+	if sections.orangesection1 then
+		for _, waypointFrame in ipairs(sections.orangesection1:GetChildren()) do
+			if waypointFrame:IsA("Frame") and waypointFrame.Name == "Waypoint" then
+				local textButton = waypointFrame:FindFirstChild("TextButton")
+				if textButton and textButton:IsA("TextButton") then
+					textButton.Activated:Connect(function()
+						onWaypointButtonClick(textButton)
+					end)
+				end
+			end
+		end
+	end
+	
+	-- Connect all waypoint buttons in Greensection1
+	if sections.greensection1 then
+		for _, waypointFrame in ipairs(sections.greensection1:GetChildren()) do
+			if waypointFrame:IsA("Frame") and waypointFrame.Name == "Waypoint" then
+				local textButton = waypointFrame:FindFirstChild("TextButton")
+				if textButton and textButton:IsA("TextButton") then
+					textButton.Activated:Connect(function()
+						onWaypointButtonClick(textButton)
+					end)
+				end
+			end
+		end
+	end
+	
+	-- Connect all waypoint buttons in Orangesection2
+	if sections.orangesection2 then
+		for _, waypointFrame in ipairs(sections.orangesection2:GetChildren()) do
+			if waypointFrame:IsA("Frame") and waypointFrame.Name == "Waypoint" then
+				local textButton = waypointFrame:FindFirstChild("TextButton")
+				if textButton and textButton:IsA("TextButton") then
+					textButton.Activated:Connect(function()
+						onWaypointButtonClick(textButton)
+					end)
+				end
+			end
+		end
+	end
+	
+	-- Connect all waypoint buttons in Greensection2
+	if sections.greensection2 then
+		for _, waypointFrame in ipairs(sections.greensection2:GetChildren()) do
+			if waypointFrame:IsA("Frame") and waypointFrame.Name == "Waypoint" then
+				local textButton = waypointFrame:FindFirstChild("TextButton")
+				if textButton and textButton:IsA("TextButton") then
+					textButton.Activated:Connect(function()
+						onWaypointButtonClick(textButton)
+					end)
+				end
+			end
+		end
+	end
+	
+	-- Connect all waypoint buttons in Orangesection3
+	if sections.orangesection3 then
+		for _, waypointFrame in ipairs(sections.orangesection3:GetChildren()) do
+			if waypointFrame:IsA("Frame") and waypointFrame.Name == "Waypoint" then
+				local textButton = waypointFrame:FindFirstChild("TextButton")
+				if textButton and textButton:IsA("TextButton") then
+					textButton.Activated:Connect(function()
+						onWaypointButtonClick(textButton)
+					end)
+				end
+			end
+		end
+	end
+	
+	-- Connect all waypoint buttons in Greensection3
+	if sections.greensection3 then
+		for _, waypointFrame in ipairs(sections.greensection3:GetChildren()) do
+			if waypointFrame:IsA("Frame") and waypointFrame.Name == "Waypoint" then
+				local textButton = waypointFrame:FindFirstChild("TextButton")
+				if textButton and textButton:IsA("TextButton") then
+					textButton.Activated:Connect(function()
+						onWaypointButtonClick(textButton)
+					end)
+				end
+			end
+		end
+	end
+	
+	-- Auto-miner will be quite difficult to implement, since the following things need to be implemented:
+	-- 1. The auto-miner first has to detect which ore the player wants to mine (Purple (It looks purple, but internally its called bluerock), red rock, or both )
+	-- 2. It has to know which mode to use, Efficient or fast
+	-- 3. auto ore miner must detect ores that the player wants to mine in real-time
+	-- 4. it needs to check existing ores, and then pick a random existing ore to mine, and in real-time after mining check for new ores and mine them
+	-- 5. the ores directory is game.Workspace.Outside.Cave.Ores RedRock - the red ones and BlueRock - the purple ones, internally blue
+	-- 6. Heres how it works: In efficient mode, it will check the ore user wants to mine trough the boolvalues, and loop tp to a random target ore and only spam the drill remotevent in game.ReplicatedStorage.RemoteEvents.Tools.Drill
+	-- This is slower, but it increases the drop chance to 70% instead of 50%
+	-- In fast mode, it spams both remote events, but has a downside of 50% drop rate, good for causing a collapse event by hoarding all possible purple gems and preventing anti-lasers from being repaired, but also can be used to get ores faster in a panic
+	-- the path to drill remote is: game.ReplicatedStorage.RemoteEvents.Tools.Drill
+	-- the path to mine remote is: game.ReplicatedStorage.RemoteEvents.Tools.Mine
+	-- both remotes working by simply choosing an ore model, and it will mine it, the auto ore miner tps the player to them quickly and spams both remotes
+	-- to ensure that the player doesnt glitch, the assemblylinearvelocity will be spammed to 0,0,0 constantly while its enabled
+	-- 7. the auto ore miner will be disabled by clicking the same button again, and the assemblylinearvelocity loop will stop
+	-- every time a player teleports, make sure to add a check to make sure a seat doesnt accidentally get teleported, and unsit the player before teleporting if the player is sitting
+	-- The loop will have medium priority, and will teleport the player using renderstepped, and also it will spam the remoteevents in the same renderstepped
+	-- 8. Auto ore miner will remember the position of the player before starting to mine, and teleport the player back to it when it is disabled
+	-- 9. If auto ore miner has nothing to mine, it will temporaily toggle of the medium priority, and wait for a new ore to spawn, and then continue mining (Ore must be the one that player wants)
+	-- 10. The buttons are in:
+	-- GUI.Container.Actionsection["Auto ore miner"]["Ore miner"].Autominer.TextButton -- this is the button that swaps ores that player wants to mine
+	-- GUI.Container.Actionsection["Auto ore miner"]["Ore miner"].Enabled.TextButton -- this swaps between enabled & disabled ore miner
+	-- GUI.Container.Actionsection["Auto ore miner"]["Ore miner mode"]["Miner state"].TextButton -- this swaps between Efficient and fast ore mining mode
+
+	-- ============================================
+	-- 14. Auto Ore Miner System
+	-- ============================================
+	-- Implements automatic ore mining with two modes:
+	-- - Efficient mode: 70% drop rate, uses Drill remote only
+	-- - Fast mode: 50% drop rate, uses both Drill and Mine remotes
+
+	-- Get the Auto ore miner section
+	local autoOreMinerSection = GUISections.Actionsection:FindFirstChild("Auto ore miner")
+	if not autoOreMinerSection then
+		warn("Auto ore miner section not found")
+	else
+		-- Get the sub-sections
+		local oreMinerFrame = autoOreMinerSection:FindFirstChild("Ore miner")
+		local oreMinerModeFrame = autoOreMinerSection:FindFirstChild("Ore miner mode")
+
+		if oreMinerFrame and oreMinerModeFrame then
+			-- Get the button frames
+			local autominerFrame = oreMinerFrame:FindFirstChild("Autominer")
+			local enabledFrame = oreMinerFrame:FindFirstChild("Enabled")
+			local minerStateFrame = oreMinerModeFrame:FindFirstChild("Miner state")
+
+			-- Get the TextButtons
+			local autominerButton = autominerFrame and autominerFrame:FindFirstChild("TextButton")
+			local enabledButton = enabledFrame and enabledFrame:FindFirstChild("TextButton")
+			local minerStateButton = minerStateFrame and minerStateFrame:FindFirstChild("TextButton")
+
+			-- Get the BoolValues
+			local purpleOreBool = autominerFrame and autominerFrame:FindFirstChild("PurpleOre")
+			local redOreBool = autominerFrame and autominerFrame:FindFirstChild("Redore")
+			local bothOresBool = autominerFrame and autominerFrame:FindFirstChild("Bothores")
+			local enabledBool = enabledFrame and enabledFrame:FindFirstChild("Enabled")
+			local efficientBool = minerStateFrame and minerStateFrame:FindFirstChild("Efficient")
+
+			-- Get RemoteEvents
+			local drillRemote = game:GetService("ReplicatedStorage"):FindFirstChild("RemoteEvents")
+			if drillRemote then
+				drillRemote = drillRemote:FindFirstChild("Tools")
+				if drillRemote then
+					drillRemote = drillRemote:FindFirstChild("Drill")
+				end
+			end
+
+			local mineRemote = game:GetService("ReplicatedStorage"):FindFirstChild("RemoteEvents")
+			if mineRemote then
+				mineRemote = mineRemote:FindFirstChild("Tools")
+				if mineRemote then
+					mineRemote = mineRemote:FindFirstChild("Mine")
+				end
+			end
+
+			-- Get RunService for RenderStepped
+			local RunService = game:GetService("RunService")
+
+			-- Auto ore miner state
+			local autoOreMinerRunning = false
+			local autoOreMinerConnection = nil
+			local velocityConnection = nil
+			local savedPosition = nil
+			local currentTargetOre = nil
+			local waitingForOre = false
+
+			-- Update button text functions
+			local function updateAutominerButtonText()
+				if autominerButton then
+					if bothOresBool and bothOresBool.Value then
+						autominerButton.Text = "Both ores"
+					elseif purpleOreBool and purpleOreBool.Value then
+						autominerButton.Text = "Purple ore"
+					elseif redOreBool and redOreBool.Value then
+						autominerButton.Text = "Red ore"
+					else
+						-- Default to both if nothing is set
+						if bothOresBool then bothOresBool.Value = true end
+						autominerButton.Text = "Both ores"
+					end
+				end
+			end
+
+			local function updateEnabledButtonText()
+				if enabledButton and enabledBool then
+					enabledButton.Text = enabledBool.Value and "Enabled" or "Disabled"
+				end
+			end
+
+			local function updateMinerStateButtonText()
+				if minerStateButton and efficientBool then
+					minerStateButton.Text = efficientBool.Value and "Efficient" or "Fast"
+				end
+			end
+
+			-- Get available ores based on selection
+			local function getAvailableOres()
+				local oresFolder = game.Workspace:FindFirstChild("Outside")
+				if not oresFolder then return {} end
+				local cave = oresFolder:FindFirstChild("Cave")
+				if not cave then return {} end
+				local ores = cave:FindFirstChild("Ores")
+				if not ores then return {} end
+
+				local availableOres = {}
+
+				-- Check which ore types the player wants
+				local wantPurple = (purpleOreBool and purpleOreBool.Value) or (bothOresBool and bothOresBool.Value)
+				local wantRed = (redOreBool and redOreBool.Value) or (bothOresBool and bothOresBool.Value)
+
+				-- Collect all available ores
+				for _, oreModel in ipairs(ores:GetChildren()) do
+					if oreModel:IsA("Model") then
+						local oreName = oreModel.Name
+						if (oreName == "BlueRock" and wantPurple) or (oreName == "RedRock" and wantRed) then
+							-- Check if the ore is still valid (has a primary part or prim)
+							local primPart = oreModel:FindFirstChild("prim") or oreModel:FindFirstChildWhichIsA("BasePart")
+							if primPart then
+								table.insert(availableOres, oreModel)
+							end
+						end
+					end
+				end
+
+				return availableOres
+			end
+
+			-- Get a random ore position
+			local function getRandomOrePosition()
+				local ores = getAvailableOres()
+				if #ores == 0 then return nil, nil end
+
+				local randomOre = ores[math.random(1, #ores)]
+				local primPart = randomOre:FindFirstChild("prim") or randomOre:FindFirstChildWhichIsA("BasePart")
+
+				if primPart then
+					return primPart.Position + Vector3.new(0, 3, 0), randomOre -- Offset to avoid clipping
+				end
+
+				return nil, nil
+			end
+
+			-- Unsit player if sitting
+			local function unsitPlayer()
+				local character = player.Character
+				if not character then return end
+
+				local humanoid = character:FindFirstChildOfClass("Humanoid")
+				if humanoid and humanoid.SeatPart then
+					humanoid.Sit = false
+					task.wait(0.1)
+				end
+			end
+
+			-- Start the auto ore miner
+			local function startAutoOreMiner()
+				if autoOreMinerRunning then return end
+
+				-- Save current position
+				local character = player.Character
+				if character then
+					local hrp = character:FindFirstChild("HumanoidRootPart")
+					if hrp then
+						savedPosition = hrp.CFrame
+					end
+				end
+
+				-- Enable MEDIUM priority
+				if _G.WaydroidPriority then
+					_G.WaydroidPriority:enablePriority(TELEPORT_PRIORITY.MEDIUM, "Auto-ore miner")
+				end
+
+				autoOreMinerRunning = true
+				waitingForOre = false
+
+				-- Velocity reset connection (keeps player from glitching)
+				velocityConnection = RunService.RenderStepped:Connect(function()
+					if not autoOreMinerRunning then return end
+
+					local char = player.Character
+					if char then
+						local hrp = char:FindFirstChild("HumanoidRootPart")
+						if hrp then
+							hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+						end
+					end
+				end)
+
+				-- Main mining loop
+				autoOreMinerConnection = RunService.RenderStepped:Connect(function()
+					if not autoOreMinerRunning then return end
+
+					-- Check if we have ores to mine
+					local ores = getAvailableOres()
+					if #ores == 0 then
+						-- No ores available, temporarily disable priority and wait
+						if not waitingForOre then
+							waitingForOre = true
+							if _G.WaydroidPriority then
+								_G.WaydroidPriority:disablePriority()
+							end
+						end
+						return
+					else
+						-- Ores available, re-enable priority if we were waiting
+						if waitingForOre then
+							waitingForOre = false
+							if _G.WaydroidPriority then
+								_G.WaydroidPriority:enablePriority(TELEPORT_PRIORITY.MEDIUM, "Auto-ore miner")
+							end
+						end
+					end
+
+					-- Get random ore position
+					local targetPos, targetOre = getRandomOrePosition()
+					if not targetPos then return end
+
+					-- Unsit if sitting
+					unsitPlayer()
+
+					-- Teleport to ore
+					local char = player.Character
+					if char then
+						local hrp = char:FindFirstChild("HumanoidRootPart")
+						if hrp then
+							hrp.CFrame = CFrame.new(targetPos)
+						end
+					end
+
+					-- Fire remotes based on mode
+					local isEfficient = efficientBool and efficientBool.Value
+
+					if isEfficient then
+						-- Efficient mode: only use Drill remote (70% drop rate)
+						if drillRemote then
+							drillRemote:FireServer(targetOre)
+						end
+					else
+						-- Fast mode: use both remotes (50% drop rate)
+						if drillRemote then
+							drillRemote:FireServer(targetOre)
+						end
+						if mineRemote then
+							mineRemote:FireServer(targetOre)
+						end
+					end
+				end)
+			end
+
+			-- Stop the auto ore miner
+			local function stopAutoOreMiner()
+				if not autoOreMinerRunning then return end
+
+				autoOreMinerRunning = false
+				waitingForOre = false
+
+				-- Disconnect the connections
+				if autoOreMinerConnection then
+					autoOreMinerConnection:Disconnect()
+					autoOreMinerConnection = nil
+				end
+
+				if velocityConnection then
+					velocityConnection:Disconnect()
+					velocityConnection = nil
+				end
+
+				-- Disable priority
+				if _G.WaydroidPriority then
+					_G.WaydroidPriority:disablePriority()
+				end
+
+				-- Restore saved position
+				if savedPosition then
+					local character = player.Character
+					if character then
+						local hrp = character:FindFirstChild("HumanoidRootPart")
+						if hrp then
+							unsitPlayer()
+							hrp.CFrame = savedPosition
+						end
+					end
+					savedPosition = nil
+				end
+			end
+
+			-- Connect the Autominer button (swaps ore selection)
+			if autominerButton then
+				updateAutominerButtonText()
+				autominerButton.Activated:Connect(function()
+					playClickSound()
+
+					-- Cycle through: Purple -> Red -> Both -> Purple
+					if purpleOreBool and purpleOreBool.Value then
+						purpleOreBool.Value = false
+						if redOreBool then redOreBool.Value = true end
+					elseif redOreBool and redOreBool.Value then
+						redOreBool.Value = false
+						if bothOresBool then bothOresBool.Value = true end
+					elseif bothOresBool and bothOresBool.Value then
+						bothOresBool.Value = false
+						if purpleOreBool then purpleOreBool.Value = true end
+					else
+						-- Default to purple if nothing is set
+						if purpleOreBool then purpleOreBool.Value = true end
+					end
+
+					updateAutominerButtonText()
+				end)
+			end
+
+			-- Connect the Enabled button
+			if enabledButton then
+				updateEnabledButtonText()
+				enabledButton.Activated:Connect(function()
+					playClickSound()
+
+					if enabledBool then
+						enabledBool.Value = not enabledBool.Value
+
+						if enabledBool.Value then
+							startAutoOreMiner()
+						else
+							stopAutoOreMiner()
+						end
+
+						updateEnabledButtonText()
+					end
+				end)
+			end
+
+			-- Connect the Miner state button (Efficient/Fast)
+			if minerStateButton then
+				updateMinerStateButtonText()
+				minerStateButton.Activated:Connect(function()
+					playClickSound()
+
+					if efficientBool then
+						efficientBool.Value = not efficientBool.Value
+						updateMinerStateButtonText()
+					end
+				end)
+			end
+
+			-- Initialize button states
+			updateAutominerButtonText()
+			updateEnabledButtonText()
+			updateMinerStateButtonText()
+		end
+	end
+
+	print("Segment 2 initialized")
+end)

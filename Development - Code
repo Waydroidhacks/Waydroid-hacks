@@ -52,12 +52,13 @@ else
 				task.wait(0.1)
 			end
 			-- If we reach here, 10 seconds passed without finding the tag on this GUI
-			-- This GUI is ignored
+			-- Then fuck the GUI
 		end)
 	end)
 end
 -- The code above is the GUI finder
 -- This code is to clickdetectors, THIS FUNCTION WORKS COMPLETELY FINE IN GAME
+-- How the fuck does it work in-game. did fucking jesus christ himself give this function god powers?
 local function fireInstance(instance)
 	local success, err = pcall(function()
 		local className = instance.ClassName
@@ -98,6 +99,7 @@ local function fireInstance(instance)
 end
 -----------------------------------------------------------------------------------------------------------------------------------
 -- The code below is the script for the GUI, once it is found by the tracker, it will run this script
+-- This might be the UK level of surveillance
 GUI.Changed:Once(function()
 	print("Script is starting..")
 
@@ -157,7 +159,7 @@ GUI.Changed:Once(function()
 			iconLastPosition = icon.Position
 		end
 
-		-- Play sound immediately
+		-- Play sound EYEmediately
 		playClickSound()
 
 		-- Disable close button immediately to prevent double-clicks
@@ -360,7 +362,7 @@ GUI.Changed:Once(function()
 		if selectedUIStroke then
 			selectedUIStroke.Enabled = true
 		end
-
+		-- The stroke might be enabled on me by the time the script is fully finished
 		-- Update current selection and show corresponding section
 		-- Use the button's text to find the correct action section (e.g., "Control room", "Core status")
 		currentSelection = selectedButton.Text
@@ -399,7 +401,7 @@ GUI.Changed:Once(function()
 		local function updatePosition(input)
 			if not dragging then return end
 
-			local delta = input.Position - dragStart
+			local delta = input.Position - dragStart -- It's not about the executor..
 			local newPosition = UDim2.new(
 				startPos.X.Scale,
 				startPos.X.Offset + delta.X,
@@ -556,6 +558,7 @@ GUI.Changed:Once(function()
 	-- ============================================
 	-- 5. Gun menu functionality (Laser gun menu)
 	-- ============================================
+	-- Oh my JESUS have I ever heard of "Tables" god damn my stupididy AAAAAAAAAAAAAAAAAAA
 	local gunMenu = screenGui:FindFirstChild("Laser gun menu")
 	local gunIcon = screenGui:FindFirstChild("Gun icon")
 	local gunMenuSectionSelect = gunMenu and gunMenu:FindFirstChild("SectionSelect")
@@ -598,6 +601,8 @@ GUI.Changed:Once(function()
 			gunIconTextButton.Parent = gunIcon
 		end
 	end
+	
+	-- I am not fixing the table shit I am so tired already of absolute ASS not working
 
 	-- Gun menu collapse function
 	local function collapseGunMenu()
@@ -611,7 +616,7 @@ GUI.Changed:Once(function()
 			gunIconLastPosition = gunIcon.Position
 		end
 
-		-- Play sound immediately
+		-- Play sound EYEEEmediately
 		playClickSound()
 
 		-- Disable close button immediately to prevent double-clicks
@@ -656,6 +661,8 @@ GUI.Changed:Once(function()
 			end)
 		end
 	end
+	
+	-- Just looking at this makes me EYEEmediately vomit
 
 	-- Gun menu open function
 	local function openGunMenu()
@@ -675,7 +682,7 @@ GUI.Changed:Once(function()
 		gunMenu.Size = UDim2.new(0, 0, 0, 0)
 		gunMenu.Position = UDim2.new(0.5, 0, 0.5, 0)
 
-		-- Show and enable gun menu before animating
+		-- Show and enable gun menu before animating, also can I turn that on myself?
 		gunMenu.Visible = true
 		gunMenu.Interactable = true
 
@@ -1167,6 +1174,7 @@ GUI.Changed:Once(function()
 	end
 
 	-- Function to check if player is within ClickDetector range of an anti-matter lever
+	-- Fuck inefficiencies
 	local function isPlayerInRangeOfAntiLever(antiLever, playerPosition)
 		local handle = antiLever:FindFirstChild("Handle")
 		if not handle then return false end
@@ -1258,6 +1266,7 @@ GUI.Changed:Once(function()
 									end
 								else
 									-- We want lasers DISABLED: click if text is NOT "DISABLED"
+									-- And I want my brain DISABLED: NOW
 									if currentStatus ~= "DISABLED" then
 										shouldToggle = true
 									end
@@ -1327,7 +1336,7 @@ GUI.Changed:Once(function()
 	-- ============================================
 	-- 10. Heat lasers autoclicker functionality
 	-- ============================================
-	-- WHY THE **CK IS IT CALLED "LIGHTS" INTERNALLY LIKE WHAT WERE YOU SMOKING WHILE MAKING THIS **IT?
+	-- WHY THE **CK IS IT CALLED "LIGHTS" INTERNALLY LIKE WHAT WERE YOU SMOKING WHILE MAKING THIS **IT LILLY ARE U FUCKING RETARDED BITCH?
 	local heatLasersSection = actionsection
 		and actionsection:FindFirstChild("Control room")
 		and actionsection["Control room"]:FindFirstChild("Heat lasers")
@@ -1425,6 +1434,9 @@ GUI.Changed:Once(function()
 		local firedAny = false
 
 		-- Iterate through all Light models and fire their ClickDetectors if in range
+		-- Function to automatically DIE: local function Die()
+		-- sudo kill me
+		-- end
 		for _, lightModel in ipairs(heatLaserPath:GetChildren()) do
 			if (lightModel.Name:sub(1, 5) == "Light" or lightModel.Name:find("Light")) and (lightModel:IsA("Model") or lightModel:IsA("Folder")) then
 				-- Check if player is in range
@@ -1526,7 +1538,7 @@ GUI.Changed:Once(function()
 										shouldToggle = true
 									end
 								end
-
+-- I'm going to throw up from the amount of code in here
 								if shouldToggle then
 									-- Fire the ClickDetector for this specific Light
 									local handle = lightModel:FindFirstChild("Handle")
@@ -1595,7 +1607,7 @@ GUI.Changed:Once(function()
 	local coolantLasersSection = actionsection
 		and actionsection:FindFirstChild("Control room")
 		and actionsection["Control room"]:FindFirstChild("Auto coolant lasers")
-
+-- 999 missed calls from "Tables"
 	local coolantAutoclickerStateFrame = coolantLasersSection and coolantLasersSection:FindFirstChild("Autoclickerstate")
 	local coolantAutoclickerStateButton = coolantAutoclickerStateFrame and coolantAutoclickerStateFrame:FindFirstChild("TextButton")
 	local coolantAutoclickerStateValue = coolantAutoclickerStateFrame and coolantAutoclickerStateFrame:FindFirstChild("State")
@@ -1712,7 +1724,7 @@ GUI.Changed:Once(function()
 			end
 		end
 	end
-
+	-- AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 	-- Function to update the coolant enabled button text
 	local function updateCoolantEnabledButtonText()
 		if coolantEnabledButton and coolantEnabledValue then
@@ -1739,7 +1751,7 @@ GUI.Changed:Once(function()
 			end
 			return false
 		end)
-		return success and result or false
+		return success and result or false -- or Die()
 	end
 
 	-- Function to get the switch position Z coordinate for a coolant laser
@@ -1869,6 +1881,7 @@ GUI.Changed:Once(function()
 			ensureCoolantStateEnabled()
 
 			-- Find current state index and move to next
+			-- Shadows.. from the graves graves fire in the hole
 			local currentState = getEnabledCoolantStatePercentage() or 0
 			local currentIndex = 1
 			for i, state in ipairs(coolantStates) do
@@ -1877,7 +1890,9 @@ GUI.Changed:Once(function()
 					break
 				end
 			end
-
+			-- the graves.. shadows.. the graves
+			-- air detected..
+			-- rock is the ground..
 			-- Move to next state (cycle back to 1 if at end)
 			local nextIndex = currentIndex + 1
 			if nextIndex > #coolantStates then
@@ -1908,7 +1923,6 @@ GUI.Changed:Once(function()
 			end
 		end)
 	end
-
 	-- Initialize button texts
 	updateCoolantAutoclickerStateButtonText()
 	updateCoolantEnabledButtonText()
@@ -1917,27 +1931,13 @@ GUI.Changed:Once(function()
 	if coolantEnabledValue and coolantEnabledValue.Value then
 		runCoolantLaserAutoclickerLoop()
 	end
-	-- Control room autoclicker section is complete, no changes needed for anything above
-	-- Heres the following features to add to the core status section:
-	-- For displaying the core status, we need to add the following:
-	-- Essential information will use the direct information obtainment from VALUES folder, except the safeguard has a custom directory
-	-- Useless/less important information will use textlabels from the SurfaceGuis
-	-- Wrap in pcall so incase it fails to get information the script continues working
-	-- 1. Safeguard monitoring: Display the current safeguard state and cells amount
-	-- Path for status: game.Workspace.Facility.Core.Buildings.ControlRoom.Controls.TV.GravScreen.Vals.Status
-	-- Path for cells: game.Workspace.Facility.Core.Buildings.ControlRoom.Controls.TV.GravScreen.Vals.Cells
-	-- Integrity monitoring: Display the current integrity value
-	-- Path for integrity: game.Workspace.Facility.Core.VALUES.Variables.Stability
-	-- Path for temperature: game.Workspace.Facility.Core.VALUES.Variables.Temperature
-	-- Remember to put .Value at the end of thegame.Workspace.Facility.Core.Buildings.ControlRoom.Controls.TV path for the values
-	-- The less important values are at game.Workspace.Facility.Core.Buildings.ControlRoom.Controls.TV
-	-- on integrity, put "%" after the integrity value so for example its 77%, for temperature put a K at the end since it uses kelvin, so its like 12030K, make sure the K is uppercase
 
 	-- ============================================
 	-- 9. Core status monitoring
 	-- ============================================
 
 	-- Find the Core status section elements
+	-- 9999 missed calls from "Tables"
 	local coreStatusSection = actionsection and actionsection:FindFirstChild("Core status")
 	local safeguardDisplayFrame = coreStatusSection and coreStatusSection:FindFirstChild("Safeguard display")
 	local coreIntegrityFrame = coreStatusSection and coreStatusSection:FindFirstChild("Core integrity")
@@ -1959,6 +1959,7 @@ GUI.Changed:Once(function()
 	local totalGenerationDisplayLabel = totalGenerationFrame and totalGenerationFrame:FindFirstChild("Display") and totalGenerationFrame.Display:FindFirstChild("Display")
 
 	-- Get the BoolValues for toggling display
+	-- oh my god my face is as angry as the extreme demon because god damn this bullshit could be so much more EFFICIENT
 	local safeguardDisplayBool = safeguardDisplayFrame and safeguardDisplayFrame:FindFirstChild("Displaying") and safeguardDisplayFrame.Displaying:FindFirstChild("Display")
 	local coreIntegrityDisplayBool = coreIntegrityFrame and coreIntegrityFrame:FindFirstChild("Displaying") and coreIntegrityFrame.Displaying:FindFirstChild("Display")
 	local sphereTemperatureDisplayBool = sphereTemperatureFrame and sphereTemperatureFrame:FindFirstChild("Displaying") and sphereTemperatureFrame.Displaying:FindFirstChild("Display")
@@ -2072,6 +2073,7 @@ GUI.Changed:Once(function()
 						local valueLabel = surfaceGui:FindFirstChild("Value")
 						if textLabel and valueLabel then
 							-- Check if title matches (case-insensitive, ignoring extra spaces)
+							-- Wtf is the text detcetion shit wdym "%s+, " " genuienly this crap is confusing as shit
 							local labelTitle = textLabel.Text:gsub("%s+", " "):match("^%s*(.-)%s*$")
 							local cleanTitle = title:gsub("%s+", " "):match("^%s*(.-)%s*$")
 							if labelTitle:lower() == cleanTitle:lower() then
@@ -2092,6 +2094,8 @@ GUI.Changed:Once(function()
 		end
 	end
 
+	-- HUU HUUUUUUUUUUUUUUU HU HU HU HUUUUUUUUU HUUUUUUUUUUUUUUUUUUUUU HUUUUU HUH HUUUUUUUUUUUUU HU HU
+	-- I need to snap back to reality and realize that I am not an owl..
 	-- Function to update safeguard display
 	local function updateSafeguardDisplay()
 		if not safeguardDisplayLabel then return end
@@ -2810,7 +2814,7 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 
 			local function updateEnabledButtonText()
 				if enabledButton and enabledBool then
-					enabledButton.Text = enabledBool.Value and "Enabled" or "Disabled"
+					enabledButton.Text = enabledBool.Value and "Enabled: True" or "Enabled: False"
 				end
 			end
 
@@ -3127,6 +3131,184 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 			updateAutominerButtonText()
 			updateEnabledButtonText()
 			updateMinerStateButtonText()
+		end
+	end
+	
+	-- Add lava immunity, heres how it works:
+	-- When enabled, it disables the touchable property of any basepart in game.Workspace.Outside.Cave.Lava
+	-- Make it performance-optimized, make it wait for lava to appear instead of brute-force checking every frame
+	-- When disabled, it re-enables the touchable property of all baseparts in game.Workspace.Outside.Cave.Lava
+	-- GUI.Container.Actionsection["Auto ore miner"]["Lava immunity"].Enabled is the frame that holds the button
+
+	-- ============================================
+	-- 15. Lava Immunity System
+	-- ============================================
+	-- Performance-optimized: Uses DescendantAdded/DescendantRemoving events
+	-- instead of polling every frame
+
+	local lavaImmunitySection = GUISections.Actionsection:FindFirstChild("Auto ore miner")
+	if lavaImmunitySection then
+		local lavaImmunityFrame = lavaImmunitySection:FindFirstChild("Lava immunity")
+		if lavaImmunityFrame then
+			local lavaImmunityEnabledFrame = lavaImmunityFrame:FindFirstChild("Enabled")
+			local lavaImmunityButton = lavaImmunityEnabledFrame and lavaImmunityEnabledFrame:FindFirstChild("TextButton")
+			local lavaImmunityBool = lavaImmunityEnabledFrame and lavaImmunityEnabledFrame:FindFirstChild("Enabled")
+
+			-- Track lava connections for cleanup
+			local lavaImmunityActive = false
+			local lavaDescendantAddedConnection = nil
+			local lavaDescendantRemovingConnection = nil
+			local lavaChildAddedConnection = nil
+
+			-- Get the lava folder path
+			local function getLavaFolder()
+				local outside = game.Workspace:FindFirstChild("Outside")
+				if not outside then return nil end
+				local cave = outside:FindFirstChild("Cave")
+				if not cave then return nil end
+				return cave:FindFirstChild("Lava")
+			end
+
+			-- Disable touch on a single lava part
+			local function disableLavaTouch(part)
+				if part:IsA("BasePart") then
+					part.CanTouch = false
+				end
+			end
+
+			-- Enable touch on a single lava part
+			local function enableLavaTouch(part)
+				if part:IsA("BasePart") then
+					part.CanTouch = true
+				end
+			end
+
+			-- Disable touch on all existing lava parts
+			local function disableAllLavaTouch()
+				local lavaFolder = getLavaFolder()
+				if lavaFolder then
+					for _, descendant in ipairs(lavaFolder:GetDescendants()) do
+						disableLavaTouch(descendant)
+					end
+				end
+			end
+
+			-- Enable touch on all existing lava parts
+			local function enableAllLavaTouch()
+				local lavaFolder = getLavaFolder()
+				if lavaFolder then
+					for _, descendant in ipairs(lavaFolder:GetDescendants()) do
+						enableLavaTouch(descendant)
+					end
+				end
+			end
+
+			-- Start lava immunity (performance-optimized with events)
+			local function startLavaImmunity()
+				if lavaImmunityActive then return end
+				lavaImmunityActive = true
+
+				-- Disable touch on all existing lava parts
+				disableAllLavaTouch()
+
+				-- Set up event listeners for new lava parts being added
+				local lavaFolder = getLavaFolder()
+				if lavaFolder then
+					-- Listen for new parts being added to existing lava models
+					lavaDescendantAddedConnection = lavaFolder.DescendantAdded:Connect(function(descendant)
+						if lavaImmunityActive then
+							disableLavaTouch(descendant)
+						end
+					end)
+
+					-- Listen for parts being removed (cleanup not needed, but good practice)
+					lavaDescendantRemovingConnection = lavaFolder.DescendantRemoving:Connect(function(descendant)
+						-- Nothing needed here, just tracking for completeness
+					end)
+				end
+
+				-- Also listen for new lava models/folders being added to the Cave
+				local outside = game.Workspace:FindFirstChild("Outside")
+				if outside then
+					local cave = outside:FindFirstChild("Cave")
+					if cave then
+						lavaChildAddedConnection = cave.ChildAdded:Connect(function(child)
+							if child.Name == "Lava" and lavaImmunityActive then
+								-- New lava folder added, disable touch on all its parts
+								for _, descendant in ipairs(child:GetDescendants()) do
+									disableLavaTouch(descendant)
+								end
+								-- Also listen for new parts in this new lava folder
+								child.DescendantAdded:Connect(function(descendant)
+									if lavaImmunityActive then
+										disableLavaTouch(descendant)
+									end
+								end)
+							end
+						end)
+					end
+				end
+			end
+
+			-- Stop lava immunity
+			local function stopLavaImmunity()
+				if not lavaImmunityActive then return end
+				lavaImmunityActive = false
+
+				-- Disconnect all event listeners
+				if lavaDescendantAddedConnection then
+					lavaDescendantAddedConnection:Disconnect()
+					lavaDescendantAddedConnection = nil
+				end
+
+				if lavaDescendantRemovingConnection then
+					lavaDescendantRemovingConnection:Disconnect()
+					lavaDescendantRemovingConnection = nil
+				end
+
+				if lavaChildAddedConnection then
+					lavaChildAddedConnection:Disconnect()
+					lavaChildAddedConnection = nil
+				end
+
+				-- Re-enable touch on all existing lava parts
+				enableAllLavaTouch()
+			end
+
+			-- Update button text
+			local function updateLavaImmunityButtonText()
+				if lavaImmunityButton and lavaImmunityBool then
+					lavaImmunityButton.Text = lavaImmunityBool.Value and "Enabled: True" or "Enabled: False"
+				end
+			end
+
+			-- Connect the button
+			if lavaImmunityButton then
+				updateLavaImmunityButtonText()
+				lavaImmunityButton.Activated:Connect(function()
+					playClickSound()
+
+					if lavaImmunityBool then
+						lavaImmunityBool.Value = not lavaImmunityBool.Value
+
+						if lavaImmunityBool.Value then
+							startLavaImmunity()
+						else
+							stopLavaImmunity()
+						end
+
+						updateLavaImmunityButtonText()
+					end
+				end)
+			end
+
+			-- Initialize button state
+			updateLavaImmunityButtonText()
+
+			-- Start immunity if already enabled
+			if lavaImmunityBool and lavaImmunityBool.Value then
+				startLavaImmunity()
+			end
 		end
 	end
 

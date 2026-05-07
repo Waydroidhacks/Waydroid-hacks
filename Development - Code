@@ -2346,7 +2346,7 @@ GUI.Changed:Once(function()
 
 
 
-
+	
 
 	print("Segment 1 initialized")
 end)
@@ -2392,7 +2392,7 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 			-- ============================================
 			-- TOGGLE FUNCTIONS - Enable/Disable priority
 			-- ============================================
-
+			
 			-- Enable a priority level (blocks lower priorities from teleporting)
 			-- Returns true if successfully enabled, false if blocked by higher priority
 			-- Usage: _G.WaydroidPriority.enablePriority(_G.WaydroidPriority.PRIORITY.MEDIUM, "Auto-ore miner")
@@ -2520,7 +2520,7 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 		greensection2 = GUISections.Waypointssection:FindFirstChild("Greensection2"),
 		orangesection3 = GUISections.Waypointssection:FindFirstChild("Orangesection3"),
 		greensection3 = GUISections.Waypointssection:FindFirstChild("Greensection3")
-	}
+		}
 	-- ============================================
 	-- WAYPOINT TABLE: Maps button text to teleport position (placeholder: 0,0,0)
 	-- Each entry clearly shows which button affects which waypoint
@@ -2635,7 +2635,7 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 			end
 		end
 	end
-
+	
 	-- Connect all waypoint buttons in Greensection1
 	if sections.greensection1 then
 		for _, waypointFrame in ipairs(sections.greensection1:GetChildren()) do
@@ -2649,7 +2649,7 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 			end
 		end
 	end
-
+	
 	-- Connect all waypoint buttons in Orangesection2
 	if sections.orangesection2 then
 		for _, waypointFrame in ipairs(sections.orangesection2:GetChildren()) do
@@ -2663,7 +2663,7 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 			end
 		end
 	end
-
+	
 	-- Connect all waypoint buttons in Greensection2
 	if sections.greensection2 then
 		for _, waypointFrame in ipairs(sections.greensection2:GetChildren()) do
@@ -2677,7 +2677,7 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 			end
 		end
 	end
-
+	
 	-- Connect all waypoint buttons in Orangesection3
 	if sections.orangesection3 then
 		for _, waypointFrame in ipairs(sections.orangesection3:GetChildren()) do
@@ -2691,7 +2691,7 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 			end
 		end
 	end
-
+	
 	-- Connect all waypoint buttons in Greensection3
 	if sections.greensection3 then
 		for _, waypointFrame in ipairs(sections.greensection3:GetChildren()) do
@@ -2705,7 +2705,7 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 			end
 		end
 	end
-
+	
 	-- Auto-miner will be quite difficult to implement, since the following things need to be implemented:
 	-- 1. The auto-miner first has to detect which ore the player wants to mine (Purple (It looks purple, but internally its called bluerock), red rock, or both )
 	-- 2. It has to know which mode to use, Efficient or fast
@@ -2901,8 +2901,11 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 				waitingForOre = false
 
 				-- Velocity reset connection (keeps player from glitching)
+				-- Only runs when there are ores available to mine
 				velocityConnection = RunService.RenderStepped:Connect(function()
 					if not autoOreMinerRunning then return end
+					-- Stop velocity reset when waiting for ores (no ores available)
+					if waitingForOre then return end
 
 					local char = player.Character
 					if char then
@@ -2912,6 +2915,40 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 						end
 					end
 				end)
+
+				-- Helper function to check if an ore is still valid and matches GUI selection
+				local function isOreValid(oreModel)
+					if not oreModel or not oreModel.Parent then return false end
+					
+					-- Check if ore still exists and has a valid part
+					local primPart = oreModel:FindFirstChild("prim") or oreModel:FindFirstChildWhichIsA("BasePart")
+					if not primPart then return false end
+					
+					-- Check if ore matches current GUI selection (real-time compatibility)
+					local oreName = oreModel.Name
+					local wantPurple = (purpleOreBool and purpleOreBool.Value) or (bothOresBool and bothOresBool.Value)
+					local wantRed = (redOreBool and redOreBool.Value) or (bothOresBool and bothOresBool.Value)
+					
+					if oreName == "BlueRock" and wantPurple then return true end
+					if oreName == "RedRock" and wantRed then return true end
+					
+					return false
+				end
+
+				-- Helper function to pick a new random ore
+				local function pickNewRandomOre()
+					local ores = getAvailableOres()
+					if #ores == 0 then return nil, nil end
+					
+					local randomOre = ores[math.random(1, #ores)]
+					local primPart = randomOre:FindFirstChild("prim") or randomOre:FindFirstChildWhichIsA("BasePart")
+					
+					if primPart then
+						return primPart.Position + Vector3.new(0, 3, 0), randomOre
+					end
+					
+					return nil, nil
+				end
 
 				-- Main mining loop
 				autoOreMinerConnection = RunService.RenderStepped:Connect(function()
@@ -2923,6 +2960,7 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 						-- No ores available, temporarily disable priority and wait
 						if not waitingForOre then
 							waitingForOre = true
+							currentTargetOre = nil
 							if _G.WaydroidPriority then
 								_G.WaydroidPriority:disablePriority()
 							end
@@ -2938,9 +2976,25 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 						end
 					end
 
-					-- Get random ore position
-					local targetPos, targetOre = getRandomOrePosition()
-					if not targetPos then return end
+					-- Check if current target ore is still valid (exists and matches GUI selection)
+					-- This ensures real-time compatibility with GUI ore selection changes
+					if not isOreValid(currentTargetOre) then
+						-- Current ore is invalid or GUI selection changed, pick a new random ore
+						local targetPos, targetOre = pickNewRandomOre()
+						if not targetPos then
+							currentTargetOre = nil
+							return
+						end
+						currentTargetOre = targetOre
+					end
+
+					-- Get position of current target ore
+					local primPart = currentTargetOre:FindFirstChild("prim") or currentTargetOre:FindFirstChildWhichIsA("BasePart")
+					if not primPart then
+						currentTargetOre = nil
+						return
+					end
+					local targetPos = primPart.Position + Vector3.new(0, 3, 0)
 
 					-- Unsit if sitting
 					unsitPlayer()
@@ -2960,15 +3014,15 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 					if isEfficient then
 						-- Efficient mode: only use Drill remote (70% drop rate)
 						if drillRemote then
-							drillRemote:FireServer(targetOre)
+							drillRemote:FireServer(currentTargetOre)
 						end
 					else
 						-- Fast mode: use both remotes (50% drop rate)
 						if drillRemote then
-							drillRemote:FireServer(targetOre)
+							drillRemote:FireServer(currentTargetOre)
 						end
 						if mineRemote then
-							mineRemote:FireServer(targetOre)
+							mineRemote:FireServer(currentTargetOre)
 						end
 					end
 				end)

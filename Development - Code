@@ -2122,7 +2122,9 @@ GUI.Changed:Once(function()
 
 		local integrity = getCoreIntegrity()
 		if integrity then
-			coreIntegrityDisplayLabel.Text = tostring(integrity) .. "%"
+			-- Round to 1 decimal place
+			local roundedIntegrity = math.floor(integrity * 10 + 0.5) / 10
+			coreIntegrityDisplayLabel.Text = tostring(roundedIntegrity) .. "%"
 		else
 			coreIntegrityDisplayLabel.Text = "N/A"
 		end
@@ -2138,8 +2140,8 @@ GUI.Changed:Once(function()
 
 		local temperature = getSphereTemperature()
 		if temperature then
-			-- Round to 3 decimal places
-			local roundedTemp = math.floor(temperature * 1000 + 0.5) / 1000
+			-- Round to 1 decimal place
+			local roundedTemp = math.floor(temperature * 10 + 0.5) / 10
 			sphereTemperatureDisplayLabel.Text = tostring(roundedTemp) .. "K"
 		else
 			sphereTemperatureDisplayLabel.Text = "N/A"
@@ -2523,7 +2525,8 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 		orangesection2 = GUISections.Waypointssection:FindFirstChild("Orangesection2"),
 		greensection2 = GUISections.Waypointssection:FindFirstChild("Greensection2"),
 		orangesection3 = GUISections.Waypointssection:FindFirstChild("Orangesection3"),
-		greensection3 = GUISections.Waypointssection:FindFirstChild("Greensection3")
+		greensection3 = GUISections.Waypointssection:FindFirstChild("Greensection3"),
+		orangesection4 = GUISections.Waypointssection:FindFirstChild("Orangesection4")
 		}
 	-- ============================================
 	-- WAYPOINT TABLE: Maps button text to teleport position (placeholder: 0,0,0)
@@ -2531,7 +2534,7 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 	-- ============================================
 	local waypointTeleportPositions = {
 		-- Greensection1 waypoints (9 total)
-		["Teleport to: Core chamber"] = Vector3.new(-121.037, 83.625, 92.037),
+		["Teleport to: Core chamber"] = Vector3.new(-124.318, 81.125, 93.354),
 		["Teleport to: Clear in chamber tag"] = Vector3.new(-131.429, 83.625, 98.036),
 		["Teleport to: Outside core airlock"] = Vector3.new(-153.946, 83.625, 111.035),
 		["Teleport to: Alien"] = Vector3.new(-27.75, 178.139, 453.75),
@@ -2550,6 +2553,9 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 		["Teleport to: Bunker01"] = Vector3.new(414.558, 261.313, 924.41),
 		["Teleport to: Bunker02"] = Vector3.new(-227.625, 463.813, 813.25),
 		["Teleport to: Helicopter"] = Vector3.new(354.352, 212.558, 372.702),
+		["Teleport to: Rockets"] = Vector3.new(-22.25, 180.8, 502.625),
+		["Teleport to: Security room"] = Vector3.new(-93.5, 178.125, 446.5),
+		["Teleport to: Inside zombie lab"] = Vector3.new(-176.5, 178, 558.5),
 
 	}
 
@@ -2699,6 +2705,20 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 	-- Connect all waypoint buttons in Greensection3
 	if sections.greensection3 then
 		for _, waypointFrame in ipairs(sections.greensection3:GetChildren()) do
+			if waypointFrame:IsA("Frame") and waypointFrame.Name == "Waypoint" then
+				local textButton = waypointFrame:FindFirstChild("TextButton")
+				if textButton and textButton:IsA("TextButton") then
+					textButton.Activated:Connect(function()
+						onWaypointButtonClick(textButton)
+					end)
+				end
+			end
+		end
+	end
+	
+	-- Connect all waypoint buttons in Orangesection4
+	if sections.orangesection4 then
+		for _, waypointFrame in ipairs(sections.orangesection4:GetChildren()) do
 			if waypointFrame:IsA("Frame") and waypointFrame.Name == "Waypoint" then
 				local textButton = waypointFrame:FindFirstChild("TextButton")
 				if textButton and textButton:IsA("TextButton") then
@@ -3253,9 +3273,10 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 			-- Stop lava immunity
 			local function stopLavaImmunity()
 				if not lavaImmunityActive then return end
-				lavaImmunityActive = false
 
-				-- Disconnect all event listeners
+				-- Disconnect all event listeners FIRST before changing state
+				-- This prevents race conditions where new parts added during
+				-- enableAllLavaTouch() would have CanTouch disabled
 				if lavaDescendantAddedConnection then
 					lavaDescendantAddedConnection:Disconnect()
 					lavaDescendantAddedConnection = nil
@@ -3270,6 +3291,9 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 					lavaChildAddedConnection:Disconnect()
 					lavaChildAddedConnection = nil
 				end
+
+				-- Now set the active flag to false
+				lavaImmunityActive = false
 
 				-- Re-enable touch on all existing lava parts
 				enableAllLavaTouch()
@@ -3311,6 +3335,8 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 			end
 		end
 	end
+	
+	
 
 	print("Segment 2 initialized")
 end)

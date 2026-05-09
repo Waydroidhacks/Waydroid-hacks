@@ -3331,31 +3331,14 @@ GUI.Changed:Once(function()
 			sound:Play()
 		end
 	end
-	-- Now this is the "Misc" tab
-	-- Heres what we need to add:
-	-- Anti-jail: Anti-jail will track game.StarterGui.TV.VoteJail
-	-- When the text of the Time text label in VoteJail changes
-	-- Make sure to wrap in a pcall that returns nil if doesnt exist
-	-- If it does exist, track every time the text of the Time text label in VoteJail changes
-	-- When the text is: "00:00","00:01","00:02","00:03","00:04","00:05","00:06","00:07","00:08","00:09","00:10"
-	-- Pick a random player to votejail, excluding the local player
-	-- To do that, repeatetly fire game.ReplicatedStorage.RemoteEvents.Actions.StartVote with the arguments of a random player
-	-- Use heartbeat to do this, when firing, choose any player, and keep firing until the Time textlabel isnt those
-	-- How this prevents jailing:
-	-- The anti-jail will keep firing StartVote until the time text label is not 00:00,00:01,00:02,00:03,00:04,00:05,00:06,00:07,00:08,00:09,00:10
-	-- As soon as the timer hits 00:10 or below, the anti-jail will start firing StartVote
-	-- This will make it so the local player who is doing this can't be vote-jailed by others due to votejailing a random player instead
-	-- To do this, go to GUISections.Miscssection and look for ["Anti-jail"].Enabled
-	-- If the bool value changes to true, set the text of the textbutton to "Enabled: True" and start the anti-jail
-	-- When the bool value is false, set the text of the textbutton to "Enabled: False" and stop the anti-jail
-	-- Play a sound when the textbutton is clicked
-	-- Make sure the boolvalue changes accordingly
 
 	-- ============================================
 	-- 16. Anti-Jail System
 	-- ============================================
 	-- Prevents the local player from being vote-jailed by automatically
 	-- starting vote jails against random players when the timer is low
+	-- this is to prevent players from jailing the local player if the local player abuses powers too much or attempts to sabotage
+	-- players get REALLY really mad when abusing powers so this is pretty much a necessity
 
 	local antiJailSection = GUISections.Miscssection:FindFirstChild("Anti-jail")
 	if antiJailSection then
@@ -3503,6 +3486,228 @@ GUI.Changed:Once(function()
 		if antiJailBool and antiJailBool.Value then
 			startAntiJail()
 		end
+	end
+	
+	-- ============================================
+	-- 17. Purple Gem Informator System
+	-- ============================================
+	-- Constantly tracks all purple gems that players have in their backpack or characters
+	-- Detects tools named "BlueRock" or "Gem" as purple gem indicators
+	-- Updates in real-time without periodic polling
+
+	local oreHoarderSection = GUISections.Miscssection:FindFirstChild("Ore hoarder")
+	if oreHoarderSection then
+		-- Get UI elements
+		local viewPurpleGemsFrame = oreHoarderSection:FindFirstChild("View purple gems")
+		local viewPurpleGemsButton = viewPurpleGemsFrame and viewPurpleGemsFrame:FindFirstChild("TextButton")
+		local infoFrame = oreHoarderSection:FindFirstChild("Info")
+		local infoLabel = infoFrame and infoFrame:FindFirstChild("TextLabel")
+		local info2Frame = oreHoarderSection:FindFirstChild("Info2")
+		local info2Label = info2Frame and info2Frame:FindFirstChild("TextLabel")
+
+		-- Track gem holders and connections
+		local gemHolders = {} -- {playerName = {gemCount = number, gemTypes = {}}
+		local playerConnections = {} -- Track connections for cleanup
+		local isTracking = false
+
+		-- Helper function to check if a tool is a purple gem
+		local function isPurpleGem(tool)
+			if not tool or not tool:IsA("Tool") then return false end
+			local toolName = tool.Name
+			return toolName == "BlueRock" or toolName == "Gem"
+		end
+
+		-- Helper function to count purple gems in a container (backpack or character)
+		local function countPurpleGemsInContainer(container)
+			local count = 0
+			local gemTypes = {}
+
+			if not container then return count, gemTypes end
+
+			for _, child in ipairs(container:GetChildren()) do
+				if isPurpleGem(child) then
+					count = count + 1
+					gemTypes[child.Name] = (gemTypes[child.Name] or 0) + 1
+				end
+			end
+
+			return count, gemTypes
+		end
+
+		-- Helper function to get total purple gems for a player
+		local function getPlayerGemCount(targetPlayer)
+			local totalCount = 0
+			local allGemTypes = {}
+
+			-- Check backpack
+			local backpack = targetPlayer:FindFirstChild("Backpack")
+			if backpack then
+				local count, gemTypes = countPurpleGemsInContainer(backpack)
+				totalCount = totalCount + count
+				for gemName, gemCount in pairs(gemTypes) do
+					allGemTypes[gemName] = (allGemTypes[gemName] or 0) + gemCount
+				end
+			end
+
+			-- Check character
+			local character = targetPlayer.Character
+			if character then
+				local count, gemTypes = countPurpleGemsInContainer(character)
+				totalCount = totalCount + count
+				for gemName, gemCount in pairs(gemTypes) do
+					allGemTypes[gemName] = (allGemTypes[gemName] or 0) + gemCount
+				end
+			end
+
+			return totalCount, allGemTypes
+		end
+
+		-- Update the UI display
+		local function updateGemDisplay()
+			if not infoLabel or not info2Label then return end
+
+			-- Count total players with gems and total gems
+			local playersWithGems = 0
+			local totalGems = 0
+			local gemHoldersList = {}
+
+			for plrName, data in pairs(gemHolders) do
+				if data.gemCount > 0 then
+					playersWithGems = playersWithGems + 1
+					totalGems = totalGems + data.gemCount
+					table.insert(gemHoldersList, plrName .. " (" .. data.gemCount .. ")")
+				end
+			end
+
+			-- Update Info label (total gems count)
+			infoLabel.Text = "Total: " .. totalGems .. " gems"
+
+			-- Update Info2 label (players with gems)
+			if playersWithGems == 0 then
+				info2Label.Text = "No holders"
+				elseif playersWithGems <= 3 then
+					info2Label.Text = table.concat(gemHoldersList, ", ")
+				else
+					info2Label.Text = playersWithGems .. " players"
+				end
+		end
+
+		-- Track a single player's gems
+		local function trackPlayerGems(targetPlayer)
+			if targetPlayer == player then return end -- Don't track local player
+
+			local function updatePlayerGems()
+				local count, gemTypes = getPlayerGemCount(targetPlayer)
+				gemHolders[targetPlayer.Name] = {
+					gemCount = count,
+					gemTypes = gemTypes
+				}
+				updateGemDisplay()
+			end
+
+			-- Initial check
+			updatePlayerGems()
+
+			-- Track backpack changes
+			local backpack = targetPlayer:FindFirstChild("Backpack")
+			if backpack then
+				backpack.ChildAdded:Connect(function(child)
+					if isPurpleGem(child) then
+						updatePlayerGems()
+					end
+				end)
+				backpack.ChildRemoved:Connect(function(child)
+					if isPurpleGem(child) then
+						updatePlayerGems()
+					end
+				end)
+			end
+
+			-- Track character changes
+			targetPlayer.CharacterAdded:Connect(function(character)
+				updatePlayerGems()
+				-- Track character children changes
+				character.ChildAdded:Connect(function(child)
+					if isPurpleGem(child) then
+						updatePlayerGems()
+					end
+				end)
+				character.ChildRemoved:Connect(function(child)
+					if isPurpleGem(child) then
+						updatePlayerGems()
+					end
+				end)
+			end)
+
+			-- Track current character if exists
+			if targetPlayer.Character then
+				targetPlayer.Character.ChildAdded:Connect(function(child)
+					if isPurpleGem(child) then
+						updatePlayerGems()
+					end
+				end)
+				targetPlayer.Character.ChildRemoved:Connect(function(child)
+					if isPurpleGem(child) then
+						updatePlayerGems()
+					end
+				end)
+			end
+		end
+
+		-- Start tracking all players
+		local function startGemTracking()
+			if isTracking then return end
+			isTracking = true
+
+			-- Track existing players
+			for _, plr in ipairs(game:GetService("Players"):GetPlayers()) do
+				trackPlayerGems(plr)
+			end
+
+			-- Track new players joining
+			game:GetService("Players").PlayerAdded:Connect(function(newPlayer)
+				trackPlayerGems(newPlayer)
+			end)
+
+			-- Clean up when players leave
+			game:GetService("Players").PlayerRemoving:Connect(function(leavingPlayer)
+				gemHolders[leavingPlayer.Name] = nil
+				updateGemDisplay()
+			end)
+		end
+
+		-- Connect the view button to show detailed info
+		if viewPurpleGemsButton then
+			viewPurpleGemsButton.Activated:Connect(function()
+				playClickSound()
+
+				-- Build detailed message
+				local message = "Purple Gem Holders:\n"
+				local hasAnyGems = false
+
+				for plrName, data in pairs(gemHolders) do
+					if data.gemCount > 0 then
+						hasAnyGems = true
+						local gemDetails = {}
+						for gemName, count in pairs(data.gemTypes) do
+							table.insert(gemDetails, gemName .. ": " .. count)
+						end
+						message = message .. plrName .. " - " .. table.concat(gemDetails, ", ") .. "\n"
+					end
+				end
+
+				if not hasAnyGems then
+					message = message .. "No players currently holding purple gems."
+				end
+
+				-- Print to console (could be changed to show a GUI popup)
+				print(message)
+			end)
+		end
+
+		-- Start tracking immediately
+		startGemTracking()
+		updateGemDisplay()
 	end
 
 	print("Segment 3 initialized")

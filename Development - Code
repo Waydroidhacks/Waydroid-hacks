@@ -601,7 +601,7 @@ GUI.Changed:Once(function()
 			gunIconTextButton.Parent = gunIcon
 		end
 	end
-	
+
 	-- I am not fixing the table shit I am so tired already of absolute ASS not working
 
 	-- Gun menu collapse function
@@ -661,7 +661,7 @@ GUI.Changed:Once(function()
 			end)
 		end
 	end
-	
+
 	-- Just looking at this makes me EYEEmediately vomit
 
 	-- Gun menu open function
@@ -1538,7 +1538,7 @@ GUI.Changed:Once(function()
 										shouldToggle = true
 									end
 								end
--- I'm going to throw up from the amount of code in here
+								-- I'm going to throw up from the amount of code in here
 								if shouldToggle then
 									-- Fire the ClickDetector for this specific Light
 									local handle = lightModel:FindFirstChild("Handle")
@@ -1607,7 +1607,7 @@ GUI.Changed:Once(function()
 	local coolantLasersSection = actionsection
 		and actionsection:FindFirstChild("Control room")
 		and actionsection["Control room"]:FindFirstChild("Auto coolant lasers")
--- 999 missed calls from "Tables"
+	-- 999 missed calls from "Tables"
 	local coolantAutoclickerStateFrame = coolantLasersSection and coolantLasersSection:FindFirstChild("Autoclickerstate")
 	local coolantAutoclickerStateButton = coolantAutoclickerStateFrame and coolantAutoclickerStateFrame:FindFirstChild("TextButton")
 	local coolantAutoclickerStateValue = coolantAutoclickerStateFrame and coolantAutoclickerStateFrame:FindFirstChild("State")
@@ -2352,7 +2352,7 @@ GUI.Changed:Once(function()
 
 
 
-	
+
 
 	print("Segment 1 initialized")
 end)
@@ -2398,7 +2398,7 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 			-- ============================================
 			-- TOGGLE FUNCTIONS - Enable/Disable priority
 			-- ============================================
-			
+
 			-- Enable a priority level (blocks lower priorities from teleporting)
 			-- Returns true if successfully enabled, false if blocked by higher priority
 			-- Usage: _G.WaydroidPriority.enablePriority(_G.WaydroidPriority.PRIORITY.MEDIUM, "Auto-ore miner")
@@ -2527,7 +2527,7 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 		orangesection3 = GUISections.Waypointssection:FindFirstChild("Orangesection3"),
 		greensection3 = GUISections.Waypointssection:FindFirstChild("Greensection3"),
 		orangesection4 = GUISections.Waypointssection:FindFirstChild("Orangesection4")
-		}
+	}
 	-- ============================================
 	-- WAYPOINT TABLE: Maps button text to teleport position (placeholder: 0,0,0)
 	-- Each entry clearly shows which button affects which waypoint
@@ -2645,7 +2645,7 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 			end
 		end
 	end
-	
+
 	-- Connect all waypoint buttons in Greensection1
 	if sections.greensection1 then
 		for _, waypointFrame in ipairs(sections.greensection1:GetChildren()) do
@@ -2659,7 +2659,7 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 			end
 		end
 	end
-	
+
 	-- Connect all waypoint buttons in Orangesection2
 	if sections.orangesection2 then
 		for _, waypointFrame in ipairs(sections.orangesection2:GetChildren()) do
@@ -2673,7 +2673,7 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 			end
 		end
 	end
-	
+
 	-- Connect all waypoint buttons in Greensection2
 	if sections.greensection2 then
 		for _, waypointFrame in ipairs(sections.greensection2:GetChildren()) do
@@ -2687,7 +2687,7 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 			end
 		end
 	end
-	
+
 	-- Connect all waypoint buttons in Orangesection3
 	if sections.orangesection3 then
 		for _, waypointFrame in ipairs(sections.orangesection3:GetChildren()) do
@@ -2701,7 +2701,7 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 			end
 		end
 	end
-	
+
 	-- Connect all waypoint buttons in Greensection3
 	if sections.greensection3 then
 		for _, waypointFrame in ipairs(sections.greensection3:GetChildren()) do
@@ -2715,7 +2715,7 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 			end
 		end
 	end
-	
+
 	-- Connect all waypoint buttons in Orangesection4
 	if sections.orangesection4 then
 		for _, waypointFrame in ipairs(sections.orangesection4:GetChildren()) do
@@ -2729,7 +2729,7 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 			end
 		end
 	end
-	
+
 	-- ============================================
 	-- 14. Auto Ore Miner System
 	-- ============================================
@@ -2920,19 +2920,19 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 				-- Helper function to check if an ore is still valid and matches GUI selection
 				local function isOreValid(oreModel)
 					if not oreModel or not oreModel.Parent then return false end
-					
+
 					-- Check if ore still exists and has a valid part
 					local primPart = oreModel:FindFirstChild("prim") or oreModel:FindFirstChildWhichIsA("BasePart")
 					if not primPart then return false end
-					
+
 					-- Check if ore matches current GUI selection (real-time compatibility)
 					local oreName = oreModel.Name
 					local wantPurple = (purpleOreBool and purpleOreBool.Value) or (bothOresBool and bothOresBool.Value)
 					local wantRed = (redOreBool and redOreBool.Value) or (bothOresBool and bothOresBool.Value)
-					
+
 					if oreName == "BlueRock" and wantPurple then return true end
 					if oreName == "RedRock" and wantRed then return true end
-					
+
 					return false
 				end
 
@@ -2940,14 +2940,14 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 				local function pickNewRandomOre()
 					local ores = getAvailableOres()
 					if #ores == 0 then return nil, nil end
-					
+
 					local randomOre = ores[math.random(1, #ores)]
 					local primPart = randomOre:FindFirstChild("prim") or randomOre:FindFirstChildWhichIsA("BasePart")
-					
+
 					if primPart then
 						return primPart.Position + Vector3.new(0, 3, 0), randomOre
 					end
-					
+
 					return nil, nil
 				end
 
@@ -3130,7 +3130,7 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 			updateMinerStateButtonText()
 		end
 	end
-	
+
 	-- Add lava immunity, heres how it works:
 	-- When enabled, it disables the touchable property of any basepart in game.Workspace.Outside.Cave.Lava
 	-- Make it performance-optimized, make it wait for lava to appear instead of brute-force checking every frame
@@ -3361,7 +3361,7 @@ GUI.Changed:Once(function()
 				return voteJail:FindFirstChild("Time")
 			end)
 			return success and result or nil
-			end
+		end
 
 		-- Get the StartVote remote
 		local function getStartVoteRemote()
@@ -3487,13 +3487,14 @@ GUI.Changed:Once(function()
 			startAntiJail()
 		end
 	end
-	
+
 	-- ============================================
-	-- 17. Purple Gem Informator System
+	-- 17. Purple Gem Informator System (ScrollingFrame)
 	-- ============================================
 	-- Constantly tracks all purple gems that players have in their backpack or characters
 	-- Detects tools named "BlueRock" or "Gem" as purple gem indicators
 	-- Updates in real-time without periodic polling
+	-- Populates a ScrollingFrame with player entries
 
 	local oreHoarderSection = GUISections.Miscssection:FindFirstChild("Ore hoarder")
 	if oreHoarderSection then
@@ -3503,11 +3504,14 @@ GUI.Changed:Once(function()
 		local infoFrame = oreHoarderSection:FindFirstChild("Info")
 		local infoLabel = infoFrame and infoFrame:FindFirstChild("TextLabel")
 		local info2Frame = oreHoarderSection:FindFirstChild("Info2")
-		local info2Label = info2Frame and info2Frame:FindFirstChild("TextLabel")
+
+		-- Get the Gemlist ScrollingFrame and template
+		local gemlistScrollingFrame = info2Frame and info2Frame:FindFirstChild("Gemlist")
+		local playerTemplate = gemlistScrollingFrame and gemlistScrollingFrame:FindFirstChild("Playerandgems")
 
 		-- Track gem holders and connections
 		local gemHolders = {} -- {playerName = {gemCount = number, gemTypes = {}}
-		local playerConnections = {} -- Track connections for cleanup
+		local playerEntries = {} -- Track ScrollingFrame entries by player name
 		local isTracking = false
 
 		-- Helper function to check if a tool is a purple gem
@@ -3562,34 +3566,56 @@ GUI.Changed:Once(function()
 			return totalCount, allGemTypes
 		end
 
+		-- Function to remove a player entry from the ScrollingFrame
+		local function removePlayerEntry(targetPlayer)
+			local entry = playerEntries[targetPlayer.Name]
+			if entry then
+				entry.Parent = nil
+				playerEntries[targetPlayer.Name] = nil
+			end
+		end
+
 		-- Update the UI display
 		local function updateGemDisplay()
-			if not infoLabel or not info2Label then return end
+			if not infoLabel then return end
 
 			-- Count total players with gems and total gems
 			local playersWithGems = 0
 			local totalGems = 0
-			local gemHoldersList = {}
 
 			for plrName, data in pairs(gemHolders) do
 				if data.gemCount > 0 then
 					playersWithGems = playersWithGems + 1
 					totalGems = totalGems + data.gemCount
-					table.insert(gemHoldersList, plrName .. " (" .. data.gemCount .. ")")
 				end
 			end
 
 			-- Update Info label (total gems count)
-			infoLabel.Text = "Total: " .. totalGems .. " gems"
+			infoLabel.Text = "Total: " .. totalGems .. " gems (" .. playersWithGems .. " holders)"
+		end
 
-			-- Update Info2 label (players with gems)
-			if playersWithGems == 0 then
-				info2Label.Text = "No holders"
-				elseif playersWithGems <= 3 then
-					info2Label.Text = table.concat(gemHoldersList, ", ")
-				else
-					info2Label.Text = playersWithGems .. " players"
-				end
+		-- Update or create a player entry in the ScrollingFrame
+		local function updateOrCreatePlayerEntry(targetPlayer)
+			if targetPlayer == player then return end -- Exclude local player
+			if not gemlistScrollingFrame or not playerTemplate then return end
+
+			local data = gemHolders[targetPlayer.Name]
+			if not data then return end
+
+			-- Check if entry already exists
+			local entry = playerEntries[targetPlayer.Name]
+
+			if not entry then
+				-- Create new entry
+				entry = playerTemplate:Clone()
+				entry.Name = targetPlayer.Name
+				entry.Visible = true
+				entry.Parent = gemlistScrollingFrame
+				playerEntries[targetPlayer.Name] = entry
+			end
+
+			-- Update entry text
+			entry.Text = targetPlayer.DisplayName .. " (" .. data.gemCount .. ")"
 		end
 
 		-- Track a single player's gems
@@ -3603,9 +3629,10 @@ GUI.Changed:Once(function()
 					gemTypes = gemTypes
 				}
 				updateGemDisplay()
+				updateOrCreatePlayerEntry(targetPlayer)
 			end
 
-			-- Initial check
+			-- Initial check and create entry
 			updatePlayerGems()
 
 			-- Track backpack changes
@@ -3672,6 +3699,7 @@ GUI.Changed:Once(function()
 			-- Clean up when players leave
 			game:GetService("Players").PlayerRemoving:Connect(function(leavingPlayer)
 				gemHolders[leavingPlayer.Name] = nil
+				removePlayerEntry(leavingPlayer)
 				updateGemDisplay()
 			end)
 		end
@@ -3709,6 +3737,8 @@ GUI.Changed:Once(function()
 		startGemTracking()
 		updateGemDisplay()
 	end
+
+	
 
 	print("Segment 3 initialized")
 end)

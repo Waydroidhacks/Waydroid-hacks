@@ -3371,8 +3371,7 @@ GUI.Changed:Once(function()
 		-- Get the VoteJail GUI path
 		local function getVoteJailTimeLabel()
 			local success, result = pcall(function()
-				local starterGui = game:GetService("StarterGui")
-				local tv = starterGui:FindFirstChild("TV")
+				local tv = game.StarterGui.TV
 				if not tv then return nil end
 				local voteJail = tv:FindFirstChild("VoteJail")
 				if not voteJail then return nil end

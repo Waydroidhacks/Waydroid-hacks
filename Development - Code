@@ -2730,29 +2730,6 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 		end
 	end
 	
-	-- Auto-miner will be quite difficult to implement, since the following things need to be implemented:
-	-- 1. The auto-miner first has to detect which ore the player wants to mine (Purple (It looks purple, but internally its called bluerock), red rock, or both )
-	-- 2. It has to know which mode to use, Efficient or fast
-	-- 3. auto ore miner must detect ores that the player wants to mine in real-time
-	-- 4. it needs to check existing ores, and then pick a random existing ore to mine, and in real-time after mining check for new ores and mine them
-	-- 5. the ores directory is game.Workspace.Outside.Cave.Ores RedRock - the red ones and BlueRock - the purple ones, internally blue
-	-- 6. Heres how it works: In efficient mode, it will check the ore user wants to mine trough the boolvalues, and loop tp to a random target ore and only spam the drill remotevent in game.ReplicatedStorage.RemoteEvents.Tools.Drill
-	-- This is slower, but it increases the drop chance to 70% instead of 50%
-	-- In fast mode, it spams both remote events, but has a downside of 50% drop rate, good for causing a collapse event by hoarding all possible purple gems and preventing anti-lasers from being repaired, but also can be used to get ores faster in a panic
-	-- the path to drill remote is: game.ReplicatedStorage.RemoteEvents.Tools.Drill
-	-- the path to mine remote is: game.ReplicatedStorage.RemoteEvents.Tools.Mine
-	-- both remotes working by simply choosing an ore model, and it will mine it, the auto ore miner tps the player to them quickly and spams both remotes
-	-- to ensure that the player doesnt glitch, the assemblylinearvelocity will be spammed to 0,0,0 constantly while its enabled
-	-- 7. the auto ore miner will be disabled by clicking the same button again, and the assemblylinearvelocity loop will stop
-	-- every time a player teleports, make sure to add a check to make sure a seat doesnt accidentally get teleported, and unsit the player before teleporting if the player is sitting
-	-- The loop will have medium priority, and will teleport the player using renderstepped, and also it will spam the remoteevents in the same renderstepped
-	-- 8. Auto ore miner will remember the position of the player before starting to mine, and teleport the player back to it when it is disabled
-	-- 9. If auto ore miner has nothing to mine, it will temporaily toggle of the medium priority, and wait for a new ore to spawn, and then continue mining (Ore must be the one that player wants)
-	-- 10. The buttons are in:
-	-- GUI.Container.Actionsection["Auto ore miner"]["Ore miner"].Autominer.TextButton -- this is the button that swaps ores that player wants to mine
-	-- GUI.Container.Actionsection["Auto ore miner"]["Ore miner"].Enabled.TextButton -- this swaps between enabled & disabled ore miner
-	-- GUI.Container.Actionsection["Auto ore miner"]["Ore miner mode"]["Miner state"].TextButton -- this swaps between Efficient and fast ore mining mode
-
 	-- ============================================
 	-- 14. Auto Ore Miner System
 	-- ============================================
@@ -3335,8 +3312,199 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 			end
 		end
 	end
-	
-	
 
 	print("Segment 2 initialized")
+end)
+
+-- Split up to third segment to prevent out of local registers again:
+
+GUI.Changed:Once(function()
+	local GUISections = {
+		Container = GUI.Value:WaitForChild("Container"),
+		Actionsection = GUI.Value.Container:WaitForChild("Actionsection"),
+		Miscssection = GUI.Value.Container.Actionsection:WaitForChild("Misc"),
+	}
+	local sound = GUI.Value:WaitForChild("GuiClick")
+	local function playClickSound()
+		if sound then
+			sound:Stop()
+			sound:Play()
+		end
+	end
+	-- Now this is the "Misc" tab
+	-- Heres what we need to add:
+	-- Anti-jail: Anti-jail will track game.StarterGui.TV.VoteJail
+	-- When the text of the Time text label in VoteJail changes
+	-- Make sure to wrap in a pcall that returns nil if doesnt exist
+	-- If it does exist, track every time the text of the Time text label in VoteJail changes
+	-- When the text is: "00:00","00:01","00:02","00:03","00:04","00:05","00:06","00:07","00:08","00:09","00:10"
+	-- Pick a random player to votejail, excluding the local player
+	-- To do that, repeatetly fire game.ReplicatedStorage.RemoteEvents.Actions.StartVote with the arguments of a random player
+	-- Use heartbeat to do this, when firing, choose any player, and keep firing until the Time textlabel isnt those
+	-- How this prevents jailing:
+	-- The anti-jail will keep firing StartVote until the time text label is not 00:00,00:01,00:02,00:03,00:04,00:05,00:06,00:07,00:08,00:09,00:10
+	-- As soon as the timer hits 00:10 or below, the anti-jail will start firing StartVote
+	-- This will make it so the local player who is doing this can't be vote-jailed by others due to votejailing a random player instead
+	-- To do this, go to GUISections.Miscssection and look for ["Anti-jail"].Enabled
+	-- If the bool value changes to true, set the text of the textbutton to "Enabled: True" and start the anti-jail
+	-- When the bool value is false, set the text of the textbutton to "Enabled: False" and stop the anti-jail
+	-- Play a sound when the textbutton is clicked
+	-- Make sure the boolvalue changes accordingly
+
+	-- ============================================
+	-- 16. Anti-Jail System
+	-- ============================================
+	-- Prevents the local player from being vote-jailed by automatically
+	-- starting vote jails against random players when the timer is low
+
+	local antiJailSection = GUISections.Miscssection:FindFirstChild("Anti-jail")
+	if antiJailSection then
+		local antiJailEnabledFrame = antiJailSection:FindFirstChild("Enabled")
+		local antiJailButton = antiJailEnabledFrame and antiJailEnabledFrame:FindFirstChild("TextButton")
+		local antiJailBool = antiJailEnabledFrame and antiJailEnabledFrame:FindFirstChild("Enabled")
+
+		-- Track anti-jail state
+		local antiJailActive = false
+		local antiJailConnection = nil
+		local voteJailTimeConnection = nil
+
+		-- Get the VoteJail GUI path
+		local function getVoteJailTimeLabel()
+			local success, result = pcall(function()
+				local starterGui = game:GetService("StarterGui")
+				local tv = starterGui:FindFirstChild("TV")
+				if not tv then return nil end
+				local voteJail = tv:FindFirstChild("VoteJail")
+				if not voteJail then return nil end
+				return voteJail:FindFirstChild("Time")
+			end)
+			return success and result or nil
+			end
+
+		-- Get the StartVote remote
+		local function getStartVoteRemote()
+			local success, result = pcall(function()
+				local remoteEvents = game:GetService("ReplicatedStorage"):FindFirstChild("RemoteEvents")
+				if not remoteEvents then return nil end
+				local actions = remoteEvents:FindFirstChild("Actions")
+				if not actions then return nil end
+				return actions:FindFirstChild("StartVote")
+			end)
+			return success and result or nil
+		end
+
+		-- Get a random player excluding local player
+		local function getRandomPlayer()
+			local players = game:GetService("Players"):GetPlayers()
+			local validPlayers = {}
+
+			for _, plr in ipairs(players) do
+				if plr ~= player then
+					table.insert(validPlayers, plr)
+				end
+			end
+
+			if #validPlayers == 0 then return nil end
+			return validPlayers[math.random(1, #validPlayers)]
+		end
+
+		-- Check if time is in the danger zone (00:00 to 00:10)
+		local dangerTimes = {
+			["00:00"] = true,
+			["00:01"] = true,
+			["00:02"] = true,
+			["00:03"] = true,
+			["00:04"] = true,
+			["00:05"] = true,
+			["00:06"] = true,
+			["00:07"] = true,
+			["00:08"] = true,
+			["00:09"] = true,
+			["00:10"] = true
+		}
+
+		-- Start the anti-jail system
+		local function startAntiJail()
+			if antiJailActive then return end
+			antiJailActive = true
+
+			local RunService = game:GetService("RunService")
+			local lastTimeText = ""
+
+			-- Main anti-jail loop using Heartbeat
+			antiJailConnection = RunService.Heartbeat:Connect(function()
+				if not antiJailActive then return end
+
+				-- Get the time label
+				local timeLabel = getVoteJailTimeLabel()
+				if not timeLabel then return end
+
+				local currentTime = timeLabel.Text
+
+				-- Check if we're in the danger zone
+				if dangerTimes[currentTime] then
+					-- Fire StartVote with a random player
+					local startVoteRemote = getStartVoteRemote()
+					if startVoteRemote then
+						local randomPlayer = getRandomPlayer()
+						if randomPlayer then
+							pcall(function()
+								startVoteRemote:FireServer(randomPlayer)
+							end)
+						end
+					end
+				end
+			end)
+		end
+
+		-- Stop the anti-jail system
+		local function stopAntiJail()
+			if not antiJailActive then return end
+
+			antiJailActive = false
+
+			-- Disconnect the heartbeat connection
+			if antiJailConnection then
+				antiJailConnection:Disconnect()
+				antiJailConnection = nil
+			end
+		end
+
+		-- Update button text
+		local function updateAntiJailButtonText()
+			if antiJailButton and antiJailBool then
+				antiJailButton.Text = antiJailBool.Value and "Enabled: True" or "Enabled: False"
+			end
+		end
+
+		-- Connect the button
+		if antiJailButton then
+			updateAntiJailButtonText()
+			antiJailButton.Activated:Connect(function()
+				playClickSound()
+
+				if antiJailBool then
+					antiJailBool.Value = not antiJailBool.Value
+
+					if antiJailBool.Value then
+						startAntiJail()
+					else
+						stopAntiJail()
+					end
+
+					updateAntiJailButtonText()
+				end
+			end)
+		end
+
+		-- Initialize button state
+		updateAntiJailButtonText()
+
+		-- Start anti-jail if already enabled
+		if antiJailBool and antiJailBool.Value then
+			startAntiJail()
+		end
+	end
+
+	print("Segment 3 initialized")
 end)

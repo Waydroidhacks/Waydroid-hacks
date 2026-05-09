@@ -3509,11 +3509,6 @@ GUI.Changed:Once(function()
 		local gemlistScrollingFrame = info2Frame and info2Frame:FindFirstChild("Gemlist")
 		local playerTemplate = gemlistScrollingFrame and gemlistScrollingFrame:FindFirstChild("Playerandgems")
 
-		-- Hide template initially - it serves as placeholder for "no holders"
-		if playerTemplate then
-			playerTemplate.Visible = false
-		end
-
 		-- Track gem holders and connections
 		local gemHolders = {} -- {playerName = {gemCount = number, gemTypes = {}}
 		local playerEntries = {} -- Track ScrollingFrame entries by player name
@@ -3597,11 +3592,6 @@ GUI.Changed:Once(function()
 
 			-- Update Info label (total gems count)
 			infoLabel.Text = "Total: " .. totalGems .. " gems (" .. playersWithGems .. " holders)"
-
-			-- Update placeholder visibility - show template when no holders
-			if playerTemplate then
-				playerTemplate.Visible = (playersWithGems == 0)
-			end
 		end
 
 		-- Update or create a player entry in the ScrollingFrame
@@ -3611,13 +3601,6 @@ GUI.Changed:Once(function()
 
 			local data = gemHolders[targetPlayer.Name]
 			if not data then return end
-
-			-- Don't show players with 0 gems
-			if data.gemCount <= 0 then
-				-- Remove entry if it exists
-				removePlayerEntry(targetPlayer)
-				return
-			end
 
 			-- Check if entry already exists
 			local entry = playerEntries[targetPlayer.Name]
@@ -3632,7 +3615,7 @@ GUI.Changed:Once(function()
 			end
 
 			-- Update entry text
-			entry.Text = targetPlayer.Name .. " (" .. data.gemCount .. ")"
+			entry.Text = targetPlayer.DisplayName .. " (" .. data.gemCount .. ")"
 		end
 
 		-- Track a single player's gems

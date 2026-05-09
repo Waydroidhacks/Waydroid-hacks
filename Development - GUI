@@ -2206,7 +2206,7 @@ G2L["ea"]["FontFace"] = Font.new([[rbxasset://fonts/families/HighwayGothic.json]
 G2L["ea"]["BackgroundTransparency"] = 1;
 G2L["ea"]["Size"] = UDim2.new(1, 0, 1, 0);
 G2L["ea"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["ea"]["Text"] = [[Teleport to: Coolant pumps switch]];
+G2L["ea"]["Text"] = [[Teleport to: Coolant pumps switches]];
 G2L["ea"]["Position"] = UDim2.new(0, 0, -0, 0);
 
 
@@ -5012,6 +5012,6 @@ G2L["20e"]["Size"] = UDim2.new(0.15789, 0, 1, 0);
 G2L["20e"]["Position"] = UDim2.new(0.8, 0, 0, 0);
 G2L["20e"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
 
-CollectionService:AddTag(G2L["1"], [[GUI_waydroid_loaded]]);
+
 
 return G2L["1"], require;

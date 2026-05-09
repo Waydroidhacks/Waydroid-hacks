@@ -3410,17 +3410,17 @@ GUI.Changed:Once(function()
 
 		-- Check if time is in the danger zone (00:00 to 00:10)
 		local dangerTimes = {
-			["00:00"] = true,
-			["00:01"] = true,
-			["00:02"] = true,
-			["00:03"] = true,
-			["00:04"] = true,
-			["00:05"] = true,
-			["00:06"] = true,
-			["00:07"] = true,
-			["00:08"] = true,
-			["00:09"] = true,
-			["00:10"] = true
+			["0:00"] = true,
+			["0:01"] = true,
+			["0:02"] = true,
+			["0:03"] = true,
+			["0:04"] = true,
+			["0:05"] = true,
+			["0:06"] = true,
+			["0:07"] = true,
+			["0:08"] = true,
+			["0:09"] = true,
+			["0:10"] = true
 		}
 
 		-- Start the anti-jail system

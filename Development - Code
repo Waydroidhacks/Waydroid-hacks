@@ -3632,7 +3632,7 @@ GUI.Changed:Once(function()
 			end
 
 			-- Update entry text
-			entry.Text = targetPlayer.DisplayName .. " (" .. data.gemCount .. ")"
+			entry.Text = targetPlayer.Name .. " (" .. data.gemCount .. ")"
 		end
 
 		-- Track a single player's gems

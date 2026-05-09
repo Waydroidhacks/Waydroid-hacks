@@ -2787,7 +2787,7 @@ G2L["127"]["TextColor3"] = Color3.fromRGB(0, 0, 0);
 G2L["127"]["BackgroundTransparency"] = 1;
 G2L["127"]["Size"] = UDim2.new(1, 0, 1, 0);
 G2L["127"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["127"]["Text"] = [[No owners]];
+G2L["127"]["Text"] = [[No holders]];
 G2L["127"]["Name"] = [[Playerandgems]];
 
 

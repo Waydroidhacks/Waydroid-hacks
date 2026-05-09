@@ -5012,6 +5012,8 @@ G2L["20e"]["Size"] = UDim2.new(0.15789, 0, 1, 0);
 G2L["20e"]["Position"] = UDim2.new(0.8, 0, 0, 0);
 G2L["20e"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
 
+-- When fully loaded, give it the tag
 
+G2L["1"]:AddTag("GUI_waydroid_loaded")
 
 return G2L["1"], require;

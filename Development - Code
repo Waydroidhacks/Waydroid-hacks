@@ -3754,8 +3754,95 @@ GUI.Changed:Once(function()
 		startGemTracking()
 		updateGemDisplay()
 	end
-
 	
+	-- ============================================
+	-- 18. Emergency Buttons Autoclicker System
+	-- ============================================
+	-- When user clicks a button in Emergency switches section,
+	-- it spam fires all ClickDetectors in the corresponding folder for 3.5 seconds
+	-- Uses heartbeat loop and fireInstance function
+
+	local emergencySwitchesSection = GUISections.Miscssection:FindFirstChild("Emergency switches")
+	if emergencySwitchesSection then
+		local RunService = game:GetService("RunService")
+
+		-- Helper function to fire all ClickDetectors in a folder for 3.5 seconds
+		local function fireEmergencyButtons(folderName)
+			-- Wrap in pcall to prevent script from failing if map is being regenerated
+			pcall(function()
+				local buttonsPath = game.Workspace:FindFirstChild("Facility")
+					and game.Workspace.Facility:FindFirstChild("Core")
+					and game.Workspace.Facility.Core:FindFirstChild("Buildings")
+					and game.Workspace.Facility.Core.Buildings:FindFirstChild("CR")
+					and game.Workspace.Facility.Core.Buildings.CR:FindFirstChild("Buttons")
+
+				if not buttonsPath then return end
+
+				local targetFolder = buttonsPath:FindFirstChild(folderName)
+				if not targetFolder then return end
+
+				-- Collect all ClickDetectors in the folder
+				local clickDetectors = {}
+				for _, descendant in ipairs(targetFolder:GetDescendants()) do
+					if descendant:IsA("ClickDetector") then
+						table.insert(clickDetectors, descendant)
+					end
+				end
+
+				if #clickDetectors == 0 then return end
+
+				-- Use heartbeat loop for 3.5 seconds to ensure buttons get pressed
+				local startTime = tick()
+				local duration = 3.5
+
+				while tick() - startTime < duration do
+					for _, clickDetector in ipairs(clickDetectors) do
+						-- Check if ClickDetector still exists and has a parent
+						if clickDetector and clickDetector.Parent then
+							fireInstance(clickDetector)
+						end
+					end
+					RunService.Heartbeat:Wait()
+				end
+			end)
+		end
+
+		-- Connect Button1 (Start)
+		local button1Frame = emergencySwitchesSection:FindFirstChild("Button1")
+		if button1Frame then
+			local button1TextButton = button1Frame:FindFirstChild("TextButton")
+			if button1TextButton then
+				button1TextButton.Activated:Connect(function()
+					playClickSound()
+					fireEmergencyButtons("Start")
+				end)
+			end
+		end
+
+		-- Connect Button2 (HeatBlast)
+		local button2Frame = emergencySwitchesSection:FindFirstChild("Button2")
+		if button2Frame then
+			local button2TextButton = button2Frame:FindFirstChild("TextButton")
+			if button2TextButton then
+				button2TextButton.Activated:Connect(function()
+					playClickSound()
+					fireEmergencyButtons("HeatBlast")
+				end)
+			end
+		end
+
+		-- Connect Button3 (Shutdown)
+		local button3Frame = emergencySwitchesSection:FindFirstChild("Button3")
+		if button3Frame then
+			local button3TextButton = button3Frame:FindFirstChild("TextButton")
+			if button3TextButton then
+				button3TextButton.Activated:Connect(function()
+					playClickSound()
+					fireEmergencyButtons("Shutdown")
+				end)
+			end
+		end
+	end
 
 	print("Segment 3 initialized")
 end)

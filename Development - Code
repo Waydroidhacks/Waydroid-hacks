@@ -4276,19 +4276,82 @@ GUI.Changed:Once(function()
 	-- ============================================
 	-- Range shoot and Auto shoot blacklisted toggle functionality
 
-	-- Range shoot toggle
-	if rangeShootButton and rangeShootValue then
-		-- Update button text based on value
-		local function updateRangeShootButtonText()
-			rangeShootButton.Text = rangeShootValue.Value and "Range: On" or "Range: Off"
+	-- Get the Range shoot TextBox and value
+	local rangeValueTextboxFrame = rangeShootFrame and rangeShootFrame:FindFirstChild("Value textbox")
+	local rangeValueTextbox = rangeValueTextboxFrame and rangeValueTextboxFrame:FindFirstChild("TextButton") -- It's actually a TextBox
+	local rangeEnabledFrame = rangeShootFrame and rangeShootFrame:FindFirstChild("Enabled")
+	local rangeEnabledButton = rangeEnabledFrame and rangeEnabledFrame:FindFirstChild("TextButton")
+	local rangeEnabledBool = rangeEnabledFrame and rangeEnabledFrame:FindFirstChild("Enabled")
+
+	-- Store the actual range value (default 1500 studs)
+	local currentRangeValue = 1500
+
+	-- Range shoot TextBox input validation (only digits and decimals)
+	if rangeValueTextbox and rangeValueTextbox:IsA("TextBox") then
+		rangeValueTextbox.Text = tostring(currentRangeValue)
+
+		rangeValueTextbox:GetPropertyChangedSignal("Text"):Connect(function()
+			local text = rangeValueTextbox.Text
+			-- Only allow digits and one decimal point
+			local cleanedText = text:gsub("[^0-9.]", "")
+
+			-- Ensure only one decimal point
+			local decimalCount = 0
+			local finalText = ""
+			for char in cleanedText:gmatch(".") do
+				if char == "." then
+					decimalCount = decimalCount + 1
+					if decimalCount == 1 then
+						finalText = finalText .. char
+					end
+				else
+					finalText = finalText .. char
+				end
+			end
+
+			-- Update text if it changed
+			if finalText ~= text then
+				rangeValueTextbox.Text = finalText
+			end
+
+			-- Parse the value
+			if finalText ~= "" and finalText ~= "." then
+				local parsed = tonumber(finalText)
+				if parsed and parsed > 0 then
+					currentRangeValue = parsed
+				end
+			end
+		end)
+
+		-- Handle focus lost to ensure valid number
+		rangeValueTextbox.FocusLost:Connect(function(enterPressed)
+			local text = rangeValueTextbox.Text
+			if text == "" or text == "." then
+				rangeValueTextbox.Text = tostring(currentRangeValue)
+			else
+				local parsed = tonumber(text)
+				if parsed and parsed > 0 then
+					currentRangeValue = parsed
+					rangeValueTextbox.Text = tostring(parsed)
+				else
+					rangeValueTextbox.Text = tostring(currentRangeValue)
+				end
+			end
+		end)
+	end
+
+	-- Range enabled toggle button
+	if rangeEnabledButton and rangeEnabledBool then
+		local function updateRangeEnabledButtonText()
+			rangeEnabledButton.Text = rangeEnabledBool.Value and "Enabled: True" or "Enabled: False"
 		end
 
-		updateRangeShootButtonText()
+		updateRangeEnabledButtonText()
 
-		rangeShootButton.Activated:Connect(function()
+		rangeEnabledButton.Activated:Connect(function()
 			playClickSound()
-			rangeShootValue.Value = not rangeShootValue.Value
-			updateRangeShootButtonText()
+			rangeEnabledBool.Value = not rangeEnabledBool.Value
+			updateRangeEnabledButtonText()
 		end)
 	end
 
@@ -4308,6 +4371,27 @@ GUI.Changed:Once(function()
 		end)
 	end
 
+	-- Anti shoot whitelisted toggle
+	local antiShootWhitelistFrame = GUISections.Gunoptions:FindFirstChild("Anti shoot whitelisted")
+	local antiShootWhitelistEnabledFrame = antiShootWhitelistFrame and antiShootWhitelistFrame:FindFirstChild("Enabled")
+	local antiShootWhitelistButton = antiShootWhitelistEnabledFrame and antiShootWhitelistEnabledFrame:FindFirstChild("TextButton")
+	local antiShootWhitelistValue = antiShootWhitelistEnabledFrame and antiShootWhitelistEnabledFrame:FindFirstChild("Enabled")
+
+	if antiShootWhitelistButton and antiShootWhitelistValue then
+		-- Update button text based on value
+		local function updateAntiShootWhitelistButtonText()
+			antiShootWhitelistButton.Text = antiShootWhitelistValue.Value and "Enabled: True" or "Enabled: False"
+		end
+
+		updateAntiShootWhitelistButtonText()
+
+		antiShootWhitelistButton.Activated:Connect(function()
+			playClickSound()
+			antiShootWhitelistValue.Value = not antiShootWhitelistValue.Value
+			updateAntiShootWhitelistButtonText()
+		end)
+	end
+
 	-- ============================================
 	-- Segment 5: Laser Gun Firing System
 	-- ============================================
@@ -4317,9 +4401,16 @@ GUI.Changed:Once(function()
 
 	local laserGunActive = false
 	local laserGunConnection = nil
-	local LASER_RANGE = 1500 -- Maximum range for laser shots
 	local FIRE_RATE = 0.05 -- Time between shots
 	local lastFireTime = 0
+
+	-- Function to get current range value from TextBox
+	local function getCurrentRange()
+		if rangeEnabledBool and rangeEnabledBool.Value then
+			return currentRangeValue
+		end
+		return 1500 -- Default range when range mode is disabled
+	end
 
 	-- Get the laser gun tool (assumes it's in StarterPack or similar)
 	local function getLaserGunTool()
@@ -4346,21 +4437,29 @@ GUI.Changed:Once(function()
 	local function fireLaserAtTarget(targetPlayer)
 		if not targetPlayer or not targetPlayer.Character then return false end
 
+		-- Check if Anti shoot whitelisted is enabled and target is whitelisted
+		if antiShootWhitelistValue and antiShootWhitelistValue.Value then
+			if whitelistData[targetPlayer.Name] then
+				return false -- Skip whitelisted players
+			end
+		end
+
 		local targetHumanoid = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
 		local targetRootPart = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
 
 		if not targetHumanoid or not targetRootPart then return false end
 
-		-- Check range if enabled
-		if rangeShootValue and rangeShootValue.Value then
-			local character = player.Character
-			if character then
-				local myRootPart = character:FindFirstChild("HumanoidRootPart")
-				if myRootPart then
-					local distance = (myRootPart.Position - targetRootPart.Position).Magnitude
-					if distance > LASER_RANGE then
-						return false -- Out of range
-					end
+		-- Get current range value
+		local currentRange = getCurrentRange()
+
+		-- Check range
+		local character = player.Character
+		if character then
+			local myRootPart = character:FindFirstChild("HumanoidRootPart")
+			if myRootPart then
+				local distance = (myRootPart.Position - targetRootPart.Position).Magnitude
+				if distance > currentRange then
+					return false -- Out of range
 				end
 			end
 		end
@@ -4399,6 +4498,9 @@ GUI.Changed:Once(function()
 			local myRootPart = character:FindFirstChild("HumanoidRootPart")
 			if not myRootPart then return end
 
+			-- Get current range value
+			local currentRange = getCurrentRange()
+
 			-- Check for blacklisted players first (damage them)
 			for plrName, _ in pairs(blacklistData) do
 				local targetPlayer = Players:FindFirstChild(plrName)
@@ -4406,7 +4508,7 @@ GUI.Changed:Once(function()
 					local targetRootPart = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
 					if targetRootPart then
 						local distance = (myRootPart.Position - targetRootPart.Position).Magnitude
-						if distance <= LASER_RANGE then
+						if distance <= currentRange then
 							fireLaserAtTarget(targetPlayer)
 							lastFireTime = tick()
 						end
@@ -4472,12 +4574,6 @@ GUI.Changed:Once(function()
 	-- Print initialization complete
 	print("============================================")
 	print("Laser Gun Menu System Fully Initialized")
-	print("============================================")
-	print("Controls:")
-	print("  L - Toggle Auto Shoot Mode")
-	print("  R - Toggle Range Mode")
-	print("  G - Toggle Gun Menu")
-	print("============================================")
 
 	print("Segment 5 initialized - Part 5: Final Initialization Complete")
 end)

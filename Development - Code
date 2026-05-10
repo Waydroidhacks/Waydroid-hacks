@@ -3846,3 +3846,638 @@ GUI.Changed:Once(function()
 
 	print("Segment 3 initialized")
 end)
+
+GUI.Changed:Once(function()
+	local GUISections = {
+		Gunmenu = GUI.Value:WaitForChild("Laser gun menu"),
+		Gunmenuactionsection = GUI.Value["Laser gun menu"]:WaitForChild("GunMenu"),
+		Gunoptions = GUI.Value["Laser gun menu"]["GunMenu"]:WaitForChild("Gunoptions"),
+		Whitelist = GUI.Value["Laser gun menu"]["GunMenu"]:WaitForChild("Whitelist"),
+		Blacklist = GUI.Value["Laser gun menu"]["GunMenu"]:WaitForChild("Blacklist")
+	}
+	local sound = GUI.Value:WaitForChild("GuiClick")
+	local function playClickSound()
+		if sound then
+			sound:Stop()
+			sound:Play()
+		end
+	end
+
+	-- ============================================
+	-- 19. Laser Gun Menu System - Segment 1: Core Data Structures
+	-- ============================================
+	-- Whitelist/Blacklist management with mutual exclusion and rememberment system
+
+	local Players = game:GetService("Players")
+	local RunService = game:GetService("RunService")
+	local UserInputService = game:GetService("UserInputService")
+
+	-- Data structures for tracking players
+	local whitelistData = {} -- {playerName = true}
+	local blacklistData = {} -- {playerName = true}
+	local playerListEntries = {} -- {playerName = entryFrame}
+	local rememberedPlayers = {} -- {playerName = "whitelist" or "blacklist"}
+
+	-- Forward declarations for UI functions (defined later in Segment 2)
+	local addPlayerToWhitelistUI, addPlayerToBlacklistUI
+	local removePlayerFromWhitelistUI, removePlayerFromBlacklistUI
+	local setPlayerEntryColor, updateAllPlayerListColors
+
+	-- Get UI elements
+	local whitelistScrollingFrame = GUISections.Whitelist:FindFirstChild("ScrollingFrame")
+	local whitelistPlayerTemplate = GUISections.Whitelist:FindFirstChild("Player")
+	local blacklistScrollingFrame = GUISections.Blacklist:FindFirstChild("ScrollingFrame")
+	local blacklistPlayerTemplate = GUISections.Blacklist.ScrollingFrame:FindFirstChild("Player")
+	local blacklistSearchFrame = GUISections.Blacklist:FindFirstChild("Search")
+	local blacklistSearchTextBox = blacklistSearchFrame and blacklistSearchFrame:FindFirstChild("TextBox")
+
+	-- Hide templates initially
+	if whitelistPlayerTemplate then
+		whitelistPlayerTemplate.Visible = false
+	end
+	if blacklistPlayerTemplate then
+		blacklistPlayerTemplate.Visible = false
+	end
+
+	-- ============================================
+	-- Helper Functions for List Management
+	-- ============================================
+
+	-- Add a player to whitelist (removes from blacklist if present)
+	local function addToWhitelist(playerName)
+		if playerName == player.Name then return end -- Can't whitelist self
+
+		-- Remove from blacklist if present (mutual exclusion)
+		if blacklistData[playerName] then
+			blacklistData[playerName] = nil
+			removePlayerFromBlacklistUI(playerName)
+		end
+
+		-- Add to whitelist
+		whitelistData[playerName] = true
+		rememberedPlayers[playerName] = "whitelist"
+		addPlayerToWhitelistUI(playerName)
+		updateAllPlayerListColors()
+	end
+
+	-- Add a player to blacklist (removes from whitelist if present)
+	local function addToBlacklist(playerName)
+		if playerName == player.Name then return end -- Can't blacklist self
+
+		-- Remove from whitelist if present (mutual exclusion)
+		if whitelistData[playerName] then
+			whitelistData[playerName] = nil
+			removePlayerFromWhitelistUI(playerName)
+		end
+
+		-- Add to blacklist
+		blacklistData[playerName] = true
+		rememberedPlayers[playerName] = "blacklist"
+		addPlayerToBlacklistUI(playerName)
+		updateAllPlayerListColors()
+	end
+
+	-- Remove player from whitelist
+	local function removeFromWhitelist(playerName)
+		whitelistData[playerName] = nil
+		rememberedPlayers[playerName] = nil
+		removePlayerFromWhitelistUI(playerName)
+		updateAllPlayerListColors()
+	end
+
+	-- Remove player from blacklist
+	local function removeFromBlacklist(playerName)
+		blacklistData[playerName] = nil
+		rememberedPlayers[playerName] = nil
+		removePlayerFromBlacklistUI(playerName)
+		updateAllPlayerListColors()
+	end
+
+	-- Toggle player status (cycles: none -> whitelist -> blacklist -> none)
+	local function togglePlayerStatus(playerName)
+		if whitelistData[playerName] then
+			-- Currently whitelisted -> remove
+			removeFromWhitelist(playerName)
+		elseif blacklistData[playerName] then
+			-- Currently blacklisted -> remove
+			removeFromBlacklist(playerName)
+		else
+			-- Not in any list -> add to whitelist by default
+			addToWhitelist(playerName)
+		end
+	end
+
+	-- Get player status: "whitelist", "blacklist", or "none"
+	local function getPlayerStatus(playerName)
+		if whitelistData[playerName] then return "whitelist" end
+		if blacklistData[playerName] then return "blacklist" end
+		return "none"
+	end
+
+	-- ============================================
+	-- Segment 2: UI Management Functions
+	-- ============================================
+	-- Functions for adding/removing player entries in whitelist/blacklist UIs
+	-- Color coding: White = whitelisted, Black = blacklisted, Gray = neutral
+
+	-- Get the text frame from a player entry
+	local function getPlayerEntryText(entry)
+		if not entry then return nil end
+		return entry:FindFirstChild("[Display name,Username]")
+	end
+
+	-- Get the TextButton from a player entry (for click handling)
+	local function getPlayerEntryButton(entry)
+		if not entry then return nil end
+		local textFrame = getPlayerEntryText(entry)
+		if textFrame then
+			return textFrame:FindFirstChild("TextButton")
+		end
+		return nil
+	end
+
+	-- Create a player entry frame
+	local function createPlayerEntry(playerName, parentFrame, template)
+		if not template or not parentFrame then return nil end
+
+		local entry = template:Clone()
+		entry.Name = playerName
+		entry.Visible = true
+		entry.Parent = parentFrame
+
+		-- Set the text
+		local textFrame = getPlayerEntryText(entry)
+		if textFrame then
+			local textButton = textFrame:FindFirstChild("TextButton")
+			if textButton then
+				textButton.Text = playerName
+				-- Click handler for removing from list
+				textButton.Activated:Connect(function()
+					playClickSound()
+					-- Determine which list this entry belongs to and remove
+					if parentFrame == whitelistScrollingFrame then
+						removeFromWhitelist(playerName)
+					elseif parentFrame == blacklistScrollingFrame then
+						removeFromBlacklist(playerName)
+					end
+				end)
+			end
+			-- Also check for TextLabel
+			local textLabel = textFrame:FindFirstChild("TextLabel")
+			if textLabel then
+				textLabel.Text = playerName
+			end
+		end
+
+		return entry
+	end
+
+	-- Add player to whitelist UI
+	function addPlayerToWhitelistUI(playerName)
+		if not whitelistScrollingFrame or not whitelistPlayerTemplate then return end
+
+		-- Don't create duplicate entries
+		if playerListEntries[playerName .. "_whitelist"] then return end
+
+		local entry = createPlayerEntry(playerName, whitelistScrollingFrame, whitelistPlayerTemplate)
+		if entry then
+			playerListEntries[playerName .. "_whitelist"] = entry
+			setPlayerEntryColor(entry, "whitelist")
+		end
+	end
+
+	-- Add player to blacklist UI
+	function addPlayerToBlacklistUI(playerName)
+		if not blacklistScrollingFrame or not blacklistPlayerTemplate then return end
+
+		-- Don't create duplicate entries
+		if playerListEntries[playerName .. "_blacklist"] then return end
+
+		local entry = createPlayerEntry(playerName, blacklistScrollingFrame, blacklistPlayerTemplate)
+		if entry then
+			playerListEntries[playerName .. "_blacklist"] = entry
+			setPlayerEntryColor(entry, "blacklist")
+		end
+	end
+
+	-- Remove player from whitelist UI
+	function removePlayerFromWhitelistUI(playerName)
+		local entry = playerListEntries[playerName .. "_whitelist"]
+		if entry then
+			entry.Parent = nil
+			playerListEntries[playerName .. "_whitelist"] = nil
+		end
+	end
+
+	-- Remove player from blacklist UI
+	function removePlayerFromBlacklistUI(playerName)
+		local entry = playerListEntries[playerName .. "_blacklist"]
+		if entry then
+			entry.Parent = nil
+			playerListEntries[playerName .. "_blacklist"] = nil
+		end
+	end
+
+	-- Set player entry color based on status
+	function setPlayerEntryColor(entry, status)
+		if not entry then return end
+
+		local uiStroke = entry:FindFirstChild("UIStroke")
+		local textFrame = getPlayerEntryText(entry)
+
+		-- Color definitions
+		local colors = {
+			whitelist = Color3.new(1, 1, 1), -- White
+			blacklist = Color3.new(0.1, 0.1, 0.1), -- Black
+			none = Color3.new(0.5, 0.5, 0.5) -- Gray
+		}
+
+		local color = colors[status] or colors.none
+
+		if uiStroke then
+			uiStroke.Color = color
+		end
+
+		-- Also update text color if possible
+		if textFrame then
+			local textButton = textFrame:FindFirstChild("TextButton")
+			if textButton then
+				textButton.TextColor3 = color
+			end
+			local textLabel = textFrame:FindFirstChild("TextLabel")
+			if textLabel then
+				textLabel.TextColor3 = color
+			end
+		end
+	end
+
+	-- Update all player list colors (called when status changes)
+	function updateAllPlayerListColors()
+		-- Update whitelist entries
+		for playerName, _ in pairs(whitelistData) do
+			local entry = playerListEntries[playerName .. "_whitelist"]
+			if entry then
+				setPlayerEntryColor(entry, "whitelist")
+			end
+		end
+
+		-- Update blacklist entries
+		for playerName, _ in pairs(blacklistData) do
+			local entry = playerListEntries[playerName .. "_blacklist"]
+			if entry then
+				setPlayerEntryColor(entry, "blacklist")
+			end
+		end
+	end
+
+	-- ============================================
+	-- Segment 3: Player Tracking and Search Functionality
+	-- ============================================
+	-- Tracks all players in the game and handles search functionality
+
+	-- Get the Gunoptions section elements
+	local rangeShootFrame = GUISections.Gunoptions:FindFirstChild("Range shoot")
+	local rangeShootButton = rangeShootFrame and rangeShootFrame:FindFirstChild("TextButton")
+	local rangeShootValue = rangeShootFrame and rangeShootFrame:FindFirstChild("Range")
+
+	local autoShootFrame = GUISections.Gunoptions:FindFirstChild("Auto shoot blacklisted")
+	local autoShootButton = autoShootFrame and autoShootFrame:FindFirstChild("TextButton")
+	local autoShootValue = autoShootFrame and autoShootFrame:FindFirstChild("Auto")
+
+	-- Track all players in a list for the blacklist search
+	local allPlayersList = {}
+	local filteredPlayersList = {}
+	local searchDebounce = false
+
+	-- Update the all players list
+	local function updateAllPlayersList()
+		allPlayersList = {}
+		for _, plr in ipairs(Players:GetPlayers()) do
+			if plr ~= player then
+				table.insert(allPlayersList, plr.Name)
+			end
+		end
+	end
+
+	-- Filter players based on search text
+	local function filterPlayers(searchText)
+		filteredPlayersList = {}
+		searchText = string.lower(searchText or "")
+
+		for _, plrName in ipairs(allPlayersList) do
+			if searchText == "" or string.find(string.lower(plrName), searchText) then
+				table.insert(filteredPlayersList, plrName)
+			end
+		end
+
+		return filteredPlayersList
+	end
+
+	-- Refresh the blacklist ScrollingFrame with filtered results
+	local function refreshBlacklistSearchResults()
+		if not blacklistScrollingFrame or not blacklistPlayerTemplate then return end
+
+		-- Clear existing search results (but keep whitelisted/blacklisted players)
+		for _, child in ipairs(blacklistScrollingFrame:GetChildren()) do
+			if child:IsA("Frame") and child.Name ~= "Player" then
+				-- Check if this is a search result (not in playerListEntries)
+				local entryKey = child.Name .. "_blacklist"
+				if not playerListEntries[entryKey] then
+					child.Parent = nil
+					child:Destroy()
+				end
+			end
+		end
+
+		-- Get search text
+		local searchText = blacklistSearchTextBox and blacklistSearchTextBox.Text or ""
+		local filtered = filterPlayers(searchText)
+
+		-- Add filtered players to the list
+		for _, plrName in ipairs(filtered) do
+			-- Skip if already in whitelist or blacklist
+			if not whitelistData[plrName] and not blacklistData[plrName] then
+				local entry = createPlayerEntry(plrName, blacklistScrollingFrame, blacklistPlayerTemplate)
+				if entry then
+					setPlayerEntryColor(entry, "none")
+					-- Override click handler for adding to blacklist
+					local textFrame = getPlayerEntryText(entry)
+					if textFrame then
+						local textButton = textFrame:FindFirstChild("TextButton")
+						if textButton then
+							textButton.Activated:Connect(function()
+								playClickSound()
+								addToBlacklist(plrName)
+							end)
+						end
+					end
+				end
+			end
+		end
+	end
+
+	-- Handle search text changes
+	if blacklistSearchTextBox then
+		blacklistSearchTextBox:GetPropertyChangedSignal("Text"):Connect(function()
+			if searchDebounce then return end
+			searchDebounce = true
+			task.wait(0.1)
+			searchDebounce = false
+			refreshBlacklistSearchResults()
+		end)
+	end
+
+	-- Track player joining/leaving
+	local function onPlayerAdded(newPlayer)
+		if newPlayer == player then return end
+		updateAllPlayersList()
+
+		-- Check if player was remembered
+		local remembered = rememberedPlayers[newPlayer.Name]
+		if remembered == "whitelist" then
+			addToWhitelist(newPlayer.Name)
+		elseif remembered == "blacklist" then
+			addToBlacklist(newPlayer.Name)
+		end
+
+		-- Refresh search if search box has text
+		if blacklistSearchTextBox and blacklistSearchTextBox.Text ~= "" then
+			refreshBlacklistSearchResults()
+		end
+	end
+
+	local function onPlayerRemoving(leavingPlayer)
+		if leavingPlayer == player then return end
+		updateAllPlayersList()
+
+		-- Remove from UI but keep in rememberedPlayers
+		if whitelistData[leavingPlayer.Name] then
+			removePlayerFromWhitelistUI(leavingPlayer.Name)
+		elseif blacklistData[leavingPlayer.Name] then
+			removePlayerFromBlacklistUI(leavingPlayer.Name)
+		end
+
+		-- Refresh search results
+		refreshBlacklistSearchResults()
+	end
+
+	-- Connect player tracking events
+	Players.PlayerAdded:Connect(onPlayerAdded)
+	Players.PlayerRemoving:Connect(onPlayerRemoving)
+
+	-- Initialize player list
+	updateAllPlayersList()
+
+	-- Initial search refresh
+	refreshBlacklistSearchResults()
+
+	-- ============================================
+	-- Segment 4: Gun Options Functionality
+	-- ============================================
+	-- Range shoot and Auto shoot blacklisted toggle functionality
+
+	-- Range shoot toggle
+	if rangeShootButton and rangeShootValue then
+		-- Update button text based on value
+		local function updateRangeShootButtonText()
+			rangeShootButton.Text = rangeShootValue.Value and "Range: On" or "Range: Off"
+		end
+
+		updateRangeShootButtonText()
+
+		rangeShootButton.Activated:Connect(function()
+			playClickSound()
+			rangeShootValue.Value = not rangeShootValue.Value
+			updateRangeShootButtonText()
+		end)
+	end
+
+	-- Auto shoot blacklisted toggle
+	if autoShootButton and autoShootValue then
+		-- Update button text based on value
+		local function updateAutoShootButtonText()
+			autoShootButton.Text = autoShootValue.Value and "Auto: On" or "Auto: Off"
+		end
+
+		updateAutoShootButtonText()
+
+		autoShootButton.Activated:Connect(function()
+			playClickSound()
+			autoShootValue.Value = not autoShootValue.Value
+			updateAutoShootButtonText()
+		end)
+	end
+
+	-- ============================================
+	-- Segment 5: Laser Gun Firing System
+	-- ============================================
+	-- Handles the actual laser gun functionality
+	-- Fires at whitelisted players (heals) or blacklisted players (damages)
+	-- Uses Range and Auto settings from Gunoptions
+
+	local laserGunActive = false
+	local laserGunConnection = nil
+	local LASER_RANGE = 1500 -- Maximum range for laser shots
+	local FIRE_RATE = 0.05 -- Time between shots
+	local lastFireTime = 0
+
+	-- Get the laser gun tool (assumes it's in StarterPack or similar)
+	local function getLaserGunTool()
+		local character = player.Character
+		if character then
+			for _, tool in ipairs(character:GetChildren()) do
+				if tool:IsA("Tool") and (tool.Name:lower():find("laser") or tool.Name:lower():find("gun")) then
+					return tool
+				end
+			end
+		end
+		local backpack = player:FindFirstChild("Backpack")
+		if backpack then
+			for _, tool in ipairs(backpack:GetChildren()) do
+				if tool:IsA("Tool") and (tool.Name:lower():find("laser") or tool.Name:lower():find("gun")) then
+					return tool
+				end
+			end
+		end
+		return nil
+	end
+
+	-- Fire laser at a target player (damage only - whitelist = ignore)
+	local function fireLaserAtTarget(targetPlayer)
+		if not targetPlayer or not targetPlayer.Character then return false end
+
+		local targetHumanoid = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+		local targetRootPart = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+
+		if not targetHumanoid or not targetRootPart then return false end
+
+		-- Check range if enabled
+		if rangeShootValue and rangeShootValue.Value then
+			local character = player.Character
+			if character then
+				local myRootPart = character:FindFirstChild("HumanoidRootPart")
+				if myRootPart then
+					local distance = (myRootPart.Position - targetRootPart.Position).Magnitude
+					if distance > LASER_RANGE then
+						return false -- Out of range
+					end
+				end
+			end
+		end
+
+		-- Fire the laser gun (simulate click or use remote)
+		local gun = getLaserGunTool()
+		if gun then
+			-- Try to find and fire the gun's remote or click detector
+			local fireRemote = gun:FindFirstChild("Fire") or gun:FindFirstChild("Shoot") or gun:FindFirstChild("Remote")
+			if fireRemote and fireRemote:IsA("RemoteEvent") then
+				fireRemote:FireServer(targetPlayer)
+				return true
+			end
+		end
+
+		return false
+	end
+
+	-- Main laser gun loop (runs when Auto is enabled)
+	local function startLaserGunLoop()
+		if laserGunActive then return end
+		laserGunActive = true
+
+		laserGunConnection = RunService.Heartbeat:Connect(function()
+			if not laserGunActive then return end
+
+			-- Check if auto mode is enabled
+			if not autoShootValue or not autoShootValue.Value then return end
+
+			-- Rate limiting
+			if tick() - lastFireTime < FIRE_RATE then return end
+
+			-- Find targets
+			local character = player.Character
+			if not character then return end
+			local myRootPart = character:FindFirstChild("HumanoidRootPart")
+			if not myRootPart then return end
+
+			-- Check for blacklisted players first (damage them)
+			for plrName, _ in pairs(blacklistData) do
+				local targetPlayer = Players:FindFirstChild(plrName)
+				if targetPlayer and targetPlayer.Character then
+					local targetRootPart = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+					if targetRootPart then
+						local distance = (myRootPart.Position - targetRootPart.Position).Magnitude
+						if distance <= LASER_RANGE then
+							fireLaserAtTarget(targetPlayer)
+							lastFireTime = tick()
+						end
+					end
+				end
+			end
+
+			-- Whitelisted players are ignored (not targeted at all)
+			-- No action needed - they are simply skipped in the targeting logic
+		end)
+	end
+
+	-- Stop laser gun loop
+	local function stopLaserGunLoop()
+		laserGunActive = false
+		if laserGunConnection then
+			laserGunConnection:Disconnect()
+			laserGunConnection = nil
+		end
+	end
+
+	-- Start auto-fire if auto is enabled on script load
+	if autoShootValue and autoShootValue.Value then
+		startLaserGunLoop()
+	end
+
+	-- Listen for auto shoot value changes
+	if autoShootValue then
+		autoShootValue:GetPropertyChangedSignal("Value"):Connect(function()
+			if autoShootValue.Value then
+				startLaserGunLoop()
+			else
+				stopLaserGunLoop()
+			end
+		end)
+	end
+
+	-- ============================================
+	-- Segment 5: Final Initialization
+	-- ============================================
+	-- Final initialization for laser gun system
+
+	-- ============================================
+	-- Final Initialization
+	-- ============================================
+	-- Initialize all UI elements and load saved data
+
+	-- Load remembered players on script start
+	for plrName, listType in pairs(rememberedPlayers) do
+		local targetPlayer = Players:FindFirstChild(plrName)
+		if targetPlayer then
+			if listType == "whitelist" then
+				addToWhitelist(plrName)
+			elseif listType == "blacklist" then
+				addToBlacklist(plrName)
+			end
+		end
+	end
+
+	-- Initial UI update
+	refreshBlacklistSearchResults()
+
+	-- Print initialization complete
+	print("============================================")
+	print("Laser Gun Menu System Fully Initialized")
+	print("============================================")
+	print("Controls:")
+	print("  L - Toggle Auto Shoot Mode")
+	print("  R - Toggle Range Mode")
+	print("  G - Toggle Gun Menu")
+	print("============================================")
+
+	print("Segment 5 initialized - Part 5: Final Initialization Complete")
+end)

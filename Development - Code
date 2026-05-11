@@ -4292,7 +4292,14 @@ GUI.Changed:Once(function()
 
 	-- Get the Range shoot TextBox and value
 	local rangeValueTextboxFrame = rangeShootFrame and rangeShootFrame:FindFirstChild("Value textbox")
-	local rangeValueTextbox = rangeValueTextboxFrame and rangeValueTextboxFrame:FindFirstChild("TextBox")
+	-- Try to find TextBox first (correct for text input), fall back to TextButton
+	local rangeValueTextbox = nil
+	if rangeValueTextboxFrame then
+		rangeValueTextbox = rangeValueTextboxFrame:FindFirstChild("TextBox")
+		if not rangeValueTextbox then
+			rangeValueTextbox = rangeValueTextboxFrame:FindFirstChild("TextButton")
+		end
+	end
 	local rangeEnabledFrame = rangeShootFrame and rangeShootFrame:FindFirstChild("Enabled")
 	local rangeEnabledButton = rangeEnabledFrame and rangeEnabledFrame:FindFirstChild("TextButton")
 	local rangeEnabledBool = rangeEnabledFrame and rangeEnabledFrame:FindFirstChild("Enabled")
@@ -4301,7 +4308,7 @@ GUI.Changed:Once(function()
 	local currentRangeValue = 1500
 
 	-- Range shoot TextBox input validation (only digits and decimals)
-	if rangeValueTextbox and rangeValueTextbox:IsA("TextBox") then
+	if rangeValueTextbox then
 		rangeValueTextbox.Text = tostring(currentRangeValue)
 
 		rangeValueTextbox:GetPropertyChangedSignal("Text"):Connect(function()
@@ -4337,21 +4344,23 @@ GUI.Changed:Once(function()
 			end
 		end)
 
-		-- Handle focus lost to ensure valid number
-		rangeValueTextbox.FocusLost:Connect(function(enterPressed)
-			local text = rangeValueTextbox.Text
-			if text == "" or text == "." then
-				rangeValueTextbox.Text = tostring(currentRangeValue)
-			else
-				local parsed = tonumber(text)
-				if parsed and parsed > 0 then
-					currentRangeValue = parsed
-					rangeValueTextbox.Text = tostring(parsed)
-				else
+		-- Handle focus lost to ensure valid number (works for both TextBox and TextButton)
+		if rangeValueTextbox:IsA("TextBox") then
+			rangeValueTextbox.FocusLost:Connect(function(enterPressed)
+				local text = rangeValueTextbox.Text
+				if text == "" or text == "." then
 					rangeValueTextbox.Text = tostring(currentRangeValue)
+				else
+					local parsed = tonumber(text)
+					if parsed and parsed > 0 then
+						currentRangeValue = parsed
+						rangeValueTextbox.Text = tostring(parsed)
+					else
+						rangeValueTextbox.Text = tostring(currentRangeValue)
+					end
 				end
-			end
-		end)
+			end)
+		end
 	end
 
 	-- Range enabled toggle button

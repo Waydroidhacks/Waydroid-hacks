@@ -4426,21 +4426,14 @@ GUI.Changed:Once(function()
 		return 1500 -- Default range when range mode is disabled
 	end
 
-	-- Get the laser gun tool (assumes it's in StarterPack or similar)
+	-- Get the laser gun tool (only checks equipped tool in character)
 	local function getLaserGunTool()
 		local character = player.Character
 		if character then
 			for _, tool in ipairs(character:GetChildren()) do
-				if tool:IsA("Tool") and (tool.Name:lower():find("laser") or tool.Name:lower():find("gun")) then
+				if tool:IsA("Tool") and tool.Name == "Superlaser" then
 					return tool
-				end
-			end
-		end
-		local backpack = player:FindFirstChild("Backpack")
-		if backpack then
-			for _, tool in ipairs(backpack:GetChildren()) do
-				if tool:IsA("Tool") and (tool.Name:lower():find("laser") or tool.Name:lower():find("gun")) then
-					return tool
+					else return nil
 				end
 			end
 		end
@@ -4582,8 +4575,69 @@ GUI.Changed:Once(function()
 		end
 	end
 
+	-- ============================================
+	-- Whitelist Player Population Function
+	-- ============================================
+	-- Populates the whitelist ScrollingFrame with all available players
+	-- so users can click to add them to the whitelist
+
+	local function refreshWhitelistPlayerList()
+		if not whitelistScrollingFrame or not whitelistPlayerTemplate then return end
+
+		-- Clear existing entries (but keep the template)
+		for _, child in ipairs(whitelistScrollingFrame:GetChildren()) do
+			if child:IsA("Frame") and child.Name ~= "Player" then
+				-- Check if this is a search result (not in playerListEntries)
+				local entryKey = child.Name .. "_whitelist"
+				if not playerListEntries[entryKey] then
+					child.Parent = nil
+					child:Destroy()
+				end
+			end
+		end
+
+		-- Add all players to the whitelist list
+		for _, plr in ipairs(Players:GetPlayers()) do
+			if plr ~= player then
+				local plrName = plr.Name
+				-- Skip if already in whitelist or blacklist
+				if not whitelistData[plrName] and not blacklistData[plrName] then
+					local entry = createPlayerEntry(plrName, whitelistScrollingFrame, whitelistPlayerTemplate)
+					if entry then
+						setPlayerEntryColor(entry, "none")
+						-- Override click handler for adding to whitelist
+						local actionButton = getPlayerEntryButton(entry)
+						if actionButton then
+							actionButton.Activated:Connect(function()
+								playClickSound()
+								addToWhitelist(plrName)
+								refreshWhitelistPlayerList()
+							end)
+						end
+					end
+				end
+			end
+		end
+	end
+
+	-- Update player list when players join/leave
+	local function onPlayerAddedForWhitelist(newPlayer)
+		if newPlayer == player then return end
+		task.wait(0.1) -- Small delay to ensure player is fully loaded
+		refreshWhitelistPlayerList()
+	end
+
+	local function onPlayerRemovingForWhitelist(leavingPlayer)
+		if leavingPlayer == player then return end
+		refreshWhitelistPlayerList()
+	end
+
+	Players.PlayerAdded:Connect(onPlayerAddedForWhitelist)
+	Players.PlayerRemoving:Connect(onPlayerRemovingForWhitelist)
+
 	-- Initial UI update
 	refreshBlacklistSearchResults()
+	refreshWhitelistPlayerList()
 
 	-- Print initialization complete
 	print("============================================")

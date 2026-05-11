@@ -4292,7 +4292,7 @@ GUI.Changed:Once(function()
 
 	-- Get the Range shoot TextBox and value
 	local rangeValueTextboxFrame = rangeShootFrame and rangeShootFrame:FindFirstChild("Value textbox")
-	local rangeValueTextbox = rangeValueTextboxFrame and rangeValueTextboxFrame:FindFirstChild("TextButton") -- It's actually a TextBox
+	local rangeValueTextbox = rangeValueTextboxFrame and rangeValueTextboxFrame:FindFirstChild("TextBox")
 	local rangeEnabledFrame = rangeShootFrame and rangeShootFrame:FindFirstChild("Enabled")
 	local rangeEnabledButton = rangeEnabledFrame and rangeEnabledFrame:FindFirstChild("TextButton")
 	local rangeEnabledBool = rangeEnabledFrame and rangeEnabledFrame:FindFirstChild("Enabled")

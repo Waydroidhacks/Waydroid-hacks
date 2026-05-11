@@ -4476,7 +4476,8 @@ GUI.Changed:Once(function()
 			-- Try to find and fire the gun's remote or click detector
 			local fireRemote = gun:FindFirstChild("RemoteEvent")
 			if fireRemote and fireRemote:IsA("RemoteEvent") then
-				fireRemote:FireServer(targetPlayer)
+				-- Fire with HumanoidRootPart position (first arg) and target model (second arg)
+				fireRemote:FireServer(targetRootPart.Position, targetPlayer.Character)
 				return true
 			end
 		end

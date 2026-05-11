@@ -4433,7 +4433,6 @@ GUI.Changed:Once(function()
 			for _, tool in ipairs(character:GetChildren()) do
 				if tool:IsA("Tool") and tool.Name == "Superlaser" then
 					return tool
-					else return nil
 				end
 			end
 		end

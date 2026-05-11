@@ -4474,7 +4474,7 @@ GUI.Changed:Once(function()
 		local gun = getLaserGunTool()
 		if gun then
 			-- Try to find and fire the gun's remote or click detector
-			local fireRemote = gun:FindFirstChild("Fire") or gun:FindFirstChild("Shoot") or gun:FindFirstChild("Remote")
+			local fireRemote = gun:FindFirstChild("RemoteEvent")
 			if fireRemote and fireRemote:IsA("RemoteEvent") then
 				fireRemote:FireServer(targetPlayer)
 				return true

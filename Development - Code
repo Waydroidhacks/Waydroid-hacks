@@ -3781,10 +3781,20 @@ GUI.Changed:Once(function()
 				local targetFolder = buttonsPath:FindFirstChild(folderName)
 				if not targetFolder then return end
 
+				-- Check if keyswitch-only mode is active
+				local onlyKeyswitchBool = GUISections.Miscssection:FindFirstChild("Only keyswitch")
+					and GUISections.Miscssection["Only keyswitch"]:FindFirstChild("Button1")
+					and GUISections.Miscssection["Only keyswitch"].Button1:FindFirstChild("Keyswitchonly")
+				local onlyKeyswitch = onlyKeyswitchBool and onlyKeyswitchBool.Value or false
+
 				-- Collect all ClickDetectors in the folder
 				local clickDetectors = {}
 				for _, descendant in ipairs(targetFolder:GetDescendants()) do
 					if descendant:IsA("ClickDetector") then
+						-- Skip ClickDetectors whose parent is a part named "StartButton" when keyswitch-only mode is on
+					if onlyKeyswitch and descendant.Parent and descendant.Parent.Name == "StartButton" then
+						continue
+						end
 						table.insert(clickDetectors, descendant)
 					end
 				end
@@ -3843,6 +3853,47 @@ GUI.Changed:Once(function()
 			end
 		end
 	end
+	
+	-- ============================================
+	-- 19. Only Keyswitch Toggle
+	-- ============================================
+	-- Toggles the keyswitch-only filter for the emergency button autoclicker.
+	-- When enabled, ClickDetectors parented to parts named "StartButton" are skipped.
+
+	local onlyKeyswitchSection = GUISections.Miscssection:FindFirstChild("Only keyswitch")
+	if onlyKeyswitchSection then
+		local onlyKeyswitchButtonFrame = onlyKeyswitchSection:FindFirstChild("Button1")
+		local onlyKeyswitchTextButton = onlyKeyswitchButtonFrame and onlyKeyswitchButtonFrame:FindFirstChild("TextButton")
+		local onlyKeyswitchBool = onlyKeyswitchButtonFrame and onlyKeyswitchButtonFrame:FindFirstChild("Keyswitchonly")
+
+		-- Update the button text to reflect the current BoolValue state
+		local function updateOnlyKeyswitchText()
+			if onlyKeyswitchTextButton and onlyKeyswitchBool then
+				onlyKeyswitchTextButton.Text = onlyKeyswitchBool.Value and "Only flip keyswitches: True" or "Only flip keyswitches: False"
+			end
+		end
+
+		-- Connect the toggle button
+		if onlyKeyswitchTextButton then
+			updateOnlyKeyswitchText()
+
+			onlyKeyswitchTextButton.Activated:Connect(function()
+				playClickSound()
+				if onlyKeyswitchBool then
+					onlyKeyswitchBool.Value = not onlyKeyswitchBool.Value
+					updateOnlyKeyswitchText()
+				end
+			end)
+
+			-- Also update text in real time if the BoolValue changes from elsewhere
+			if onlyKeyswitchBool then
+				onlyKeyswitchBool.Changed:Connect(function()
+					updateOnlyKeyswitchText()
+				end)
+			end
+		end
+	end
+	
 
 	print("Segment 3 initialized")
 end)

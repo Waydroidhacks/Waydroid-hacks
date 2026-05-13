@@ -4418,22 +4418,14 @@ GUI.Changed:Once(function()
 	-- ============================================
 	-- Segment 5: Laser Gun Firing System
 	-- ============================================
-	-- Handles the actual laser gun functionality
-	-- Fires at whitelisted players (heals) or blacklisted players (damages)
-	-- Uses Range and Auto settings from Gunoptions
+	-- Range shoot: fires at all non-whitelisted players within range
+	-- Auto shoot blacklisted: fires at blacklisted players regardless of range
+	-- Both check: line of sight (CanCollide), NPC status, and dead status
 
 	local laserGunActive = false
 	local laserGunConnection = nil
 	local FIRE_RATE = 0.05 -- Time between shots
 	local lastFireTime = 0
-
-	-- Function to get current range value from TextBox
-	local function getCurrentRange()
-		if rangeEnabledBool and rangeEnabledBool.Value then
-			return currentRangeValue
-		end
-		return 1500 -- Default range when range mode is disabled
-	end
 
 	-- Get the laser gun tool (only checks equipped tool in character)
 	local function getLaserGunTool()
@@ -4448,7 +4440,59 @@ GUI.Changed:Once(function()
 		return nil
 	end
 
-	-- Fire laser at a target player (damage only - whitelist = ignore)
+	-- Check if there is a clear line of sight to the target
+	-- Returns false if a CanCollide part is blocking the path
+	local function hasLineOfSight(myRootPart, targetRootPart)
+		local origin = myRootPart.Position
+		local targetPos = targetRootPart.Position
+		local direction = targetPos - origin
+		local maxDistance = direction.Magnitude
+
+		if maxDistance == 0 then return true end
+
+		local rayParams = RaycastParams.new()
+		rayParams.FilterType = Enum.RaycastFilterType.Exclude
+		rayParams.FilterDescendantsInstances = {player.Character}
+
+		local currentOrigin = origin
+		local totalTraveled = 0
+		local maxIterations = 10 -- Safety limit to prevent infinite loops
+
+		for _ = 1, maxIterations do
+			local remaining = targetPos - currentOrigin
+			local result = workspace:Raycast(currentOrigin, remaining, rayParams)
+
+			if not result then
+				return true -- Nothing blocking, clear line of sight
+			end
+
+			local hitPart = result.Instance
+
+			-- Check if we hit the target's character directly
+			if hitPart and hitPart:IsDescendantOf(targetRootPart.Parent) then
+				return true -- Hit the target, clear line of sight
+			end
+
+			-- Check if the blocking part has CanCollide on
+			if hitPart and hitPart.CanCollide then
+				return false -- Blocked by a solid part
+			end
+
+			-- Non-CanCollide part (glass, forcefield, etc.), continue raycasting past it
+			local hitDist = (result.Position - currentOrigin).Magnitude
+			totalTraveled = totalTraveled + hitDist
+			currentOrigin = result.Position + remaining.Unit * 0.01
+
+			if totalTraveled >= maxDistance then
+				return true -- Reached target distance without hitting CanCollide
+			end
+		end
+
+		return true -- Safety fallback
+	end
+
+	-- Fire laser at a target player
+	-- Checks: whitelisted (skip), dead (skip), NPC (skip), line of sight (skip if blocked)
 	local function fireLaserAtTarget(targetPlayer)
 		if not targetPlayer or not targetPlayer.Character then return false end
 
@@ -4464,28 +4508,28 @@ GUI.Changed:Once(function()
 
 		if not targetHumanoid or not targetRootPart then return false end
 
-		-- Get current range value
-		local currentRange = getCurrentRange()
+		-- Check if target is dead
+		if targetHumanoid.Health <= 0 then return false end
 
-		-- Check range
+		-- Check if target is an NPC (not a real player)
+		if Players:GetPlayerFromCharacter(targetPlayer.Character) == nil then return false end
+
+		-- Check line of sight (blocked by CanCollide parts)
 		local character = player.Character
 		if character then
 			local myRootPart = character:FindFirstChild("HumanoidRootPart")
 			if myRootPart then
-				local distance = (myRootPart.Position - targetRootPart.Position).Magnitude
-				if distance > currentRange then
-					return false -- Out of range
+				if not hasLineOfSight(myRootPart, targetRootPart) then
+					return false -- Blocked by a solid part
 				end
 			end
 		end
 
-		-- Fire the laser gun (simulate click or use remote)
+		-- Fire the laser gun
 		local gun = getLaserGunTool()
 		if gun then
-			-- Try to find and fire the gun's remote or click detector
 			local fireRemote = gun:FindFirstChild("RemoteEvent")
 			if fireRemote and fireRemote:IsA("RemoteEvent") then
-				-- Fire with HumanoidRootPart position (first arg) and target model (second arg)
 				fireRemote:FireServer(targetRootPart.Position, targetPlayer.Character)
 				return true
 			end
@@ -4494,49 +4538,12 @@ GUI.Changed:Once(function()
 		return false
 	end
 
-	-- Main laser gun loop (runs when Auto is enabled)
-	local function startLaserGunLoop()
-		if laserGunActive then return end
-		laserGunActive = true
-
-		laserGunConnection = RunService.Heartbeat:Connect(function()
-			if not laserGunActive then return end
-
-			-- Check if auto mode is enabled
-			if not autoShootValue or not autoShootValue.Value then return end
-
-			-- Rate limiting
-			if tick() - lastFireTime < FIRE_RATE then return end
-
-			-- Find targets
-			local character = player.Character
-			if not character then return end
-			local myRootPart = character:FindFirstChild("HumanoidRootPart")
-			if not myRootPart then return end
-
-			-- Get current range value
-			local currentRange = getCurrentRange()
-
-			-- Check for blacklisted players first (damage them)
-			for plrName, _ in pairs(blacklistData) do
-				local targetPlayer = Players:FindFirstChild(plrName)
-				if targetPlayer and targetPlayer.Character then
-					local targetRootPart = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
-					if targetRootPart then
-						local distance = (myRootPart.Position - targetRootPart.Position).Magnitude
-						if distance <= currentRange then
-							fireLaserAtTarget(targetPlayer)
-							lastFireTime = tick()
-						end
-					end
-				end
-			end
-
-			-- Whitelisted players are ignored (not targeted at all)
-			-- No action needed - they are simply skipped in the targeting logic
-		end)
+	-- Check if either firing mode is active
+	local function shouldLoopBeActive()
+		local rangeActive = rangeEnabledBool and rangeEnabledBool.Value
+		local autoActive = autoShootValue and autoShootValue.Value
+		return rangeActive or autoActive
 	end
-
 	-- Stop laser gun loop
 	local function stopLaserGunLoop()
 		laserGunActive = false
@@ -4545,16 +4552,90 @@ GUI.Changed:Once(function()
 			laserGunConnection = nil
 		end
 	end
+	-- Main laser gun loop
+	-- Handles both Range shoot and Auto shoot blacklisted independently
+	local function startLaserGunLoop()
+		if laserGunActive then return end
+		laserGunActive = true
 
-	-- Start auto-fire if auto is enabled on script load
-	if autoShootValue and autoShootValue.Value then
+		laserGunConnection = RunService.Heartbeat:Connect(function()
+			if not laserGunActive then return end
+
+			-- Check if at least one mode is still active
+			if not shouldLoopBeActive() then
+				stopLaserGunLoop()
+				return
+			end
+
+			-- Rate limiting
+			if tick() - lastFireTime < FIRE_RATE then return end
+
+			-- Find local player's root part
+			local character = player.Character
+			if not character then return end
+			local myRootPart = character:FindFirstChild("HumanoidRootPart")
+			if not myRootPart then return end
+
+			local fired = false
+
+			-- Auto shoot blacklisted: fire at blacklisted players regardless of range
+			if autoShootValue and autoShootValue.Value then
+				for plrName, _ in pairs(blacklistData) do
+					local targetPlayer = Players:FindFirstChild(plrName)
+					if targetPlayer and targetPlayer.Character then
+						if fireLaserAtTarget(targetPlayer) then
+							fired = true
+						end
+					end
+				end
+			end
+
+			-- Range shoot: fire at all non-whitelisted players within range
+			if rangeEnabledBool and rangeEnabledBool.Value then
+				for _, targetPlayer in ipairs(Players:GetPlayers()) do
+					if targetPlayer ~= player and targetPlayer.Character then
+						-- Skip whitelisted players
+						if not whitelistData[targetPlayer.Name] then
+							local targetRootPart = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+							if targetRootPart then
+								local distance = (myRootPart.Position - targetRootPart.Position).Magnitude
+								if distance <= currentRangeValue then
+									if fireLaserAtTarget(targetPlayer) then
+										fired = true
+									end
+								end
+							end
+						end
+					end
+				end
+			end
+
+			if fired then
+				lastFireTime = tick()
+			end
+		end)
+	end
+
+	-- Start loop if either mode is enabled on script load
+	if shouldLoopBeActive() then
 		startLaserGunLoop()
 	end
 
-	-- Listen for auto shoot value changes
+	-- Listen for auto shoot blacklisted value changes
 	if autoShootValue then
 		autoShootValue:GetPropertyChangedSignal("Value"):Connect(function()
-			if autoShootValue.Value then
+			if shouldLoopBeActive() then
+				startLaserGunLoop()
+			else
+				stopLaserGunLoop()
+			end
+		end)
+	end
+
+	-- Listen for range shoot enabled changes
+	if rangeEnabledBool then
+		rangeEnabledBool:GetPropertyChangedSignal("Value"):Connect(function()
+			if shouldLoopBeActive() then
 				startLaserGunLoop()
 			else
 				stopLaserGunLoop()

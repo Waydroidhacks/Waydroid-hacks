@@ -3781,20 +3781,10 @@ GUI.Changed:Once(function()
 				local targetFolder = buttonsPath:FindFirstChild(folderName)
 				if not targetFolder then return end
 
-				-- Check if keyswitch-only mode is active
-				local onlyKeyswitchBool = GUISections.Miscssection:FindFirstChild("Only keyswitch")
-					and GUISections.Miscssection["Only keyswitch"]:FindFirstChild("Button1")
-					and GUISections.Miscssection["Only keyswitch"].Button1:FindFirstChild("Keyswitchonly")
-				local onlyKeyswitch = onlyKeyswitchBool and onlyKeyswitchBool.Value or false
-
-				-- Collect all ClickDetectors in the folder
+				-- Collect ALL ClickDetectors in the folder (keyswitch filtering happens per-iteration for real-time updates)
 				local clickDetectors = {}
 				for _, descendant in ipairs(targetFolder:GetDescendants()) do
 					if descendant:IsA("ClickDetector") then
-						-- Skip ClickDetectors whose parent is a part named "StartButton" when keyswitch-only mode is on
-					if onlyKeyswitch and descendant.Parent and descendant.Parent.Name == "StartButton" then
-						continue
-						end
 						table.insert(clickDetectors, descendant)
 					end
 				end
@@ -3806,14 +3796,99 @@ GUI.Changed:Once(function()
 				local duration = 3.5
 
 				while tick() - startTime < duration do
+					-- Re-read keyswitch-only mode each iteration for real-time updates
+					local onlyKeyswitchBool = GUISections.Miscssection:FindFirstChild("Only keyswitch")
+						and GUISections.Miscssection["Only keyswitch"]:FindFirstChild("Button1")
+						and GUISections.Miscssection["Only keyswitch"].Button1:FindFirstChild("Keyswitchonly")
+					local onlyKeyswitch = onlyKeyswitchBool and onlyKeyswitchBool.Value or false
+
 					for _, clickDetector in ipairs(clickDetectors) do
 						-- Check if ClickDetector still exists and has a parent
 						if clickDetector and clickDetector.Parent then
+							-- Skip ClickDetectors whose parent is a part named "StartButton" when keyswitch-only mode is on
+							if onlyKeyswitch and clickDetector.Parent and clickDetector.Parent.Name == "StartButton" then
+								continue
+							end
 							fireInstance(clickDetector)
 						end
 					end
 					RunService.Heartbeat:Wait()
 				end
+			end)
+		end
+
+		-- ============================================
+		-- 20. Looping State & Functions
+		-- ============================================
+		-- When enabled, keeps calling the emergency button function in a loop.
+		-- Depending on which button the user clicked, it loops that until disabled.
+		-- The loop function fully prevents normal clicks — they become the looped clicks.
+		-- When turned off, halts all emergency button autoclickers.
+		-- Button text: "Looping: True" / "Looping: False"
+
+		local onlyKeyswitchSectionRef = GUISections.Miscssection:FindFirstChild("Only keyswitch")
+		local loopedButtonFrame = onlyKeyswitchSectionRef and onlyKeyswitchSectionRef:FindFirstChild("Button2")
+		local loopedTextButton = loopedButtonFrame and loopedButtonFrame:FindFirstChild("TextButton")
+		local loopedBool = loopedButtonFrame and loopedButtonFrame:FindFirstChild("Looped")
+
+		local isLooping = false
+		local currentLoopFolder = nil
+		local loopConnection = nil
+
+		local function updateLoopingText()
+			if loopedTextButton and loopedBool then
+				loopedTextButton.Text = loopedBool.Value and "Looping: True" or "Looping: False"
+			end
+		end
+
+		local function stopLoop()
+			isLooping = false
+			currentLoopFolder = nil
+			if loopConnection then
+				loopConnection:Disconnect()
+				loopConnection = nil
+			end
+		end
+
+		local function startLoop(folderName)
+			-- Stop any existing loop first
+			stopLoop()
+
+			isLooping = true
+			currentLoopFolder = folderName
+
+			loopConnection = RunService.Heartbeat:Connect(function()
+				if not isLooping then return end
+
+				pcall(function()
+					local buttonsPath = game.Workspace:FindFirstChild("Facility")
+						and game.Workspace.Facility:FindFirstChild("Core")
+						and game.Workspace.Facility.Core:FindFirstChild("Buildings")
+						and game.Workspace.Facility.Core.Buildings:FindFirstChild("CR")
+						and game.Workspace.Facility.Core.Buildings.CR:FindFirstChild("Buttons")
+
+					if not buttonsPath then return end
+
+					local targetFolder = buttonsPath:FindFirstChild(currentLoopFolder)
+					if not targetFolder then return end
+
+					-- Re-read keyswitch-only mode each iteration for real-time updates
+					local onlyKeyswitchBool = GUISections.Miscssection:FindFirstChild("Only keyswitch")
+						and GUISections.Miscssection["Only keyswitch"]:FindFirstChild("Button1")
+						and GUISections.Miscssection["Only keyswitch"].Button1:FindFirstChild("Keyswitchonly")
+					local onlyKeyswitch = onlyKeyswitchBool and onlyKeyswitchBool.Value or false
+
+					for _, descendant in ipairs(targetFolder:GetDescendants()) do
+						if descendant:IsA("ClickDetector") then
+							if onlyKeyswitch and descendant.Parent and descendant.Parent.Name == "StartButton" then
+								continue
+							end
+							if descendant and descendant.Parent then
+								fireInstance(descendant)
+							end
+						end
+					end
+				end)
 			end)
 		end
 
@@ -3824,7 +3899,11 @@ GUI.Changed:Once(function()
 			if button1TextButton then
 				button1TextButton.Activated:Connect(function()
 					playClickSound()
-					fireEmergencyButtons("Start")
+					if loopedBool and loopedBool.Value then
+						startLoop("Start")
+					else
+						fireEmergencyButtons("Start")
+					end
 				end)
 			end
 		end
@@ -3836,7 +3915,11 @@ GUI.Changed:Once(function()
 			if button2TextButton then
 				button2TextButton.Activated:Connect(function()
 					playClickSound()
-					fireEmergencyButtons("HeatBlast")
+					if loopedBool and loopedBool.Value then
+						startLoop("HeatBlast")
+					else
+						fireEmergencyButtons("HeatBlast")
+					end
 				end)
 			end
 		end
@@ -3848,7 +3931,44 @@ GUI.Changed:Once(function()
 			if button3TextButton then
 				button3TextButton.Activated:Connect(function()
 					playClickSound()
-					fireEmergencyButtons("Shutdown")
+					if loopedBool and loopedBool.Value then
+						startLoop("Shutdown")
+					else
+						fireEmergencyButtons("Shutdown")
+					end
+				end)
+			end
+		end
+
+		-- ============================================
+		-- 20. Looping Toggle (inside emergency switches block for scope access)
+		-- ============================================
+		if loopedTextButton then
+			updateLoopingText()
+
+			loopedTextButton.Activated:Connect(function()
+				playClickSound()
+				if loopedBool then
+					loopedBool.Value = not loopedBool.Value
+
+					if loopedBool.Value then
+						-- Looping enabled - will start on next emergency button click
+						updateLoopingText()
+					else
+						-- Looping disabled - stop all running loops
+						stopLoop()
+						updateLoopingText()
+					end
+				end
+			end)
+
+			-- Also update text and stop loops if the BoolValue changes from elsewhere
+			if loopedBool then
+				loopedBool.Changed:Connect(function()
+					updateLoopingText()
+					if not loopedBool.Value then
+						stopLoop()
+					end
 				end)
 			end
 		end
@@ -3894,6 +4014,11 @@ GUI.Changed:Once(function()
 		end
 	end
 	
+	-- ============================================
+	-- 20. Looping
+	-- ============================================
+	-- Implementation resides inside the emergency switches section (Section 18)
+	-- for scope access to RunService, fireInstance, and looping state variables.
 
 	print("Segment 3 initialized")
 end)

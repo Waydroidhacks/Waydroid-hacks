@@ -3754,7 +3754,7 @@ GUI.Changed:Once(function()
 		startGemTracking()
 		updateGemDisplay()
 	end
-	
+
 	-- ============================================
 	-- 18. Emergency Buttons Autoclicker System
 	-- ============================================
@@ -3781,20 +3781,10 @@ GUI.Changed:Once(function()
 				local targetFolder = buttonsPath:FindFirstChild(folderName)
 				if not targetFolder then return end
 
-				-- Check if keyswitch-only mode is active
-				local onlyKeyswitchBool = GUISections.Miscssection:FindFirstChild("Only keyswitch")
-					and GUISections.Miscssection["Only keyswitch"]:FindFirstChild("Button1")
-					and GUISections.Miscssection["Only keyswitch"].Button1:FindFirstChild("Keyswitchonly")
-				local onlyKeyswitch = onlyKeyswitchBool and onlyKeyswitchBool.Value or false
-
-				-- Collect all ClickDetectors in the folder
+				-- Collect ALL ClickDetectors in the folder (keyswitch filtering happens per-iteration for real-time updates)
 				local clickDetectors = {}
 				for _, descendant in ipairs(targetFolder:GetDescendants()) do
 					if descendant:IsA("ClickDetector") then
-						-- Skip ClickDetectors whose parent is a part named "StartButton" when keyswitch-only mode is on
-					if onlyKeyswitch and descendant.Parent and descendant.Parent.Name == "StartButton" then
-						continue
-						end
 						table.insert(clickDetectors, descendant)
 					end
 				end
@@ -3806,14 +3796,99 @@ GUI.Changed:Once(function()
 				local duration = 3.5
 
 				while tick() - startTime < duration do
+					-- Re-read keyswitch-only mode each iteration for real-time updates
+					local onlyKeyswitchBool = GUISections.Miscssection:FindFirstChild("Only keyswitch")
+						and GUISections.Miscssection["Only keyswitch"]:FindFirstChild("Button1")
+						and GUISections.Miscssection["Only keyswitch"].Button1:FindFirstChild("Keyswitchonly")
+					local onlyKeyswitch = onlyKeyswitchBool and onlyKeyswitchBool.Value or false
+
 					for _, clickDetector in ipairs(clickDetectors) do
 						-- Check if ClickDetector still exists and has a parent
 						if clickDetector and clickDetector.Parent then
+							-- Skip ClickDetectors whose parent is a part named "StartButton" when keyswitch-only mode is on
+							if onlyKeyswitch and clickDetector.Parent and clickDetector.Parent.Name == "StartButton" then
+								continue
+							end
 							fireInstance(clickDetector)
 						end
 					end
 					RunService.Heartbeat:Wait()
 				end
+			end)
+		end
+
+		-- ============================================
+		-- 20. Looping State & Functions
+		-- ============================================
+		-- When enabled, keeps calling the emergency button function in a loop.
+		-- Depending on which button the user clicked, it loops that until disabled.
+		-- The loop function fully prevents normal clicks — they become the looped clicks.
+		-- When turned off, halts all emergency button autoclickers.
+		-- Button text: "Looping: True" / "Looping: False"
+
+		local onlyKeyswitchSectionRef = GUISections.Miscssection:FindFirstChild("Only keyswitch")
+		local loopedButtonFrame = onlyKeyswitchSectionRef and onlyKeyswitchSectionRef:FindFirstChild("Button2")
+		local loopedTextButton = loopedButtonFrame and loopedButtonFrame:FindFirstChild("TextButton")
+		local loopedBool = loopedButtonFrame and loopedButtonFrame:FindFirstChild("Looped")
+
+		local isLooping = false
+		local currentLoopFolder = nil
+		local loopConnection = nil
+
+		local function updateLoopingText()
+			if loopedTextButton and loopedBool then
+				loopedTextButton.Text = loopedBool.Value and "Looping: True" or "Looping: False"
+			end
+		end
+
+		local function stopLoop()
+			isLooping = false
+			currentLoopFolder = nil
+			if loopConnection then
+				loopConnection:Disconnect()
+				loopConnection = nil
+			end
+		end
+
+		local function startLoop(folderName)
+			-- Stop any existing loop first
+			stopLoop()
+
+			isLooping = true
+			currentLoopFolder = folderName
+
+			loopConnection = RunService.Heartbeat:Connect(function()
+				if not isLooping then return end
+
+				pcall(function()
+					local buttonsPath = game.Workspace:FindFirstChild("Facility")
+						and game.Workspace.Facility:FindFirstChild("Core")
+						and game.Workspace.Facility.Core:FindFirstChild("Buildings")
+						and game.Workspace.Facility.Core.Buildings:FindFirstChild("CR")
+						and game.Workspace.Facility.Core.Buildings.CR:FindFirstChild("Buttons")
+
+					if not buttonsPath then return end
+
+					local targetFolder = buttonsPath:FindFirstChild(currentLoopFolder)
+					if not targetFolder then return end
+
+					-- Re-read keyswitch-only mode each iteration for real-time updates
+					local onlyKeyswitchBool = GUISections.Miscssection:FindFirstChild("Only keyswitch")
+						and GUISections.Miscssection["Only keyswitch"]:FindFirstChild("Button1")
+						and GUISections.Miscssection["Only keyswitch"].Button1:FindFirstChild("Keyswitchonly")
+					local onlyKeyswitch = onlyKeyswitchBool and onlyKeyswitchBool.Value or false
+
+					for _, descendant in ipairs(targetFolder:GetDescendants()) do
+						if descendant:IsA("ClickDetector") then
+							if onlyKeyswitch and descendant.Parent and descendant.Parent.Name == "StartButton" then
+								continue
+							end
+							if descendant and descendant.Parent then
+								fireInstance(descendant)
+							end
+						end
+					end
+				end)
 			end)
 		end
 
@@ -3824,7 +3899,11 @@ GUI.Changed:Once(function()
 			if button1TextButton then
 				button1TextButton.Activated:Connect(function()
 					playClickSound()
-					fireEmergencyButtons("Start")
+					if loopedBool and loopedBool.Value then
+						startLoop("Start")
+					else
+						fireEmergencyButtons("Start")
+					end
 				end)
 			end
 		end
@@ -3836,7 +3915,11 @@ GUI.Changed:Once(function()
 			if button2TextButton then
 				button2TextButton.Activated:Connect(function()
 					playClickSound()
-					fireEmergencyButtons("HeatBlast")
+					if loopedBool and loopedBool.Value then
+						startLoop("HeatBlast")
+					else
+						fireEmergencyButtons("HeatBlast")
+					end
 				end)
 			end
 		end
@@ -3848,12 +3931,49 @@ GUI.Changed:Once(function()
 			if button3TextButton then
 				button3TextButton.Activated:Connect(function()
 					playClickSound()
-					fireEmergencyButtons("Shutdown")
+					if loopedBool and loopedBool.Value then
+						startLoop("Shutdown")
+					else
+						fireEmergencyButtons("Shutdown")
+					end
+				end)
+			end
+		end
+
+		-- ============================================
+		-- 20. Looping Toggle (inside emergency switches block for scope access)
+		-- ============================================
+		if loopedTextButton then
+			updateLoopingText()
+
+			loopedTextButton.Activated:Connect(function()
+				playClickSound()
+				if loopedBool then
+					loopedBool.Value = not loopedBool.Value
+
+					if loopedBool.Value then
+						-- Looping enabled - will start on next emergency button click
+						updateLoopingText()
+					else
+						-- Looping disabled - stop all running loops
+						stopLoop()
+						updateLoopingText()
+					end
+				end
+			end)
+
+			-- Also update text and stop loops if the BoolValue changes from elsewhere
+			if loopedBool then
+				loopedBool.Changed:Connect(function()
+					updateLoopingText()
+					if not loopedBool.Value then
+						stopLoop()
+					end
 				end)
 			end
 		end
 	end
-	
+
 	-- ============================================
 	-- 19. Only Keyswitch Toggle
 	-- ============================================
@@ -3893,7 +4013,12 @@ GUI.Changed:Once(function()
 			end
 		end
 	end
-	
+
+	-- ============================================
+	-- 20. Looping
+	-- ============================================
+	-- Implementation resides inside the emergency switches section (Section 18)
+	-- for scope access to RunService, fireInstance, and looping state variables.
 
 	print("Segment 3 initialized")
 end)
@@ -4445,6 +4570,26 @@ GUI.Changed:Once(function()
 		end)
 	end
 
+	-- Auto shoot alien toggle
+	local autoShootAlienFrame = GUISections.Gunoptions:FindFirstChild("Auto shoot alien")
+	local autoShootAlienEnabledFrame = autoShootAlienFrame and autoShootAlienFrame:FindFirstChild("Enabled")
+	local autoShootAlienButton = autoShootAlienEnabledFrame and autoShootAlienEnabledFrame:FindFirstChild("TextButton")
+	local autoShootAlienValue = autoShootAlienEnabledFrame and autoShootAlienEnabledFrame:FindFirstChild("Enabled")
+
+	if autoShootAlienButton and autoShootAlienValue then
+		local function updateAutoShootAlienButtonText()
+			autoShootAlienButton.Text = autoShootAlienValue.Value and "Enabled: True" or "Enabled: False"
+		end
+
+		updateAutoShootAlienButtonText()
+
+		autoShootAlienButton.Activated:Connect(function()
+			playClickSound()
+			autoShootAlienValue.Value = not autoShootAlienValue.Value
+			updateAutoShootAlienButtonText()
+		end)
+	end
+
 	-- Anti shoot whitelisted toggle
 	local antiShootWhitelistFrame = GUISections.Gunoptions:FindFirstChild("Anti shoot whitelisted")
 	local antiShootWhitelistEnabledFrame = antiShootWhitelistFrame and antiShootWhitelistFrame:FindFirstChild("Enabled")
@@ -4475,7 +4620,7 @@ GUI.Changed:Once(function()
 
 	local laserGunActive = false
 	local laserGunConnection = nil
-	local FIRE_RATE = 0.05 -- Time between shots
+	local FIRE_RATE = 0 -- No rate limit
 	local lastFireTime = 0
 
 	-- Get the laser gun tool (only checks equipped tool in character)
@@ -4526,7 +4671,30 @@ GUI.Changed:Once(function()
 
 			-- Check if the blocking part has CanCollide on
 			if hitPart and hitPart.CanCollide then
-				return false -- Blocked by a solid part
+				-- Check if this CanCollide part belongs to a character with a Humanoid
+				-- If so, treat it as a non-blocking part (we can shoot through characters)
+				local isCharacterPart = false
+				local checkAncestor = hitPart.Parent
+				while checkAncestor and checkAncestor ~= workspace do
+					if checkAncestor:FindFirstChildOfClass("Humanoid") then
+						isCharacterPart = true
+						break
+					end
+					checkAncestor = checkAncestor.Parent
+				end
+
+				if isCharacterPart then
+					-- It's a character part, continue raycasting past it
+					local hitDist = (result.Position - currentOrigin).Magnitude
+					totalTraveled = totalTraveled + hitDist
+					currentOrigin = result.Position + remaining.Unit * 0.01
+
+					if totalTraveled >= maxDistance then
+						return true
+					end
+				else
+					return false -- Blocked by a solid non-character part
+				end
 			end
 
 			-- Non-CanCollide part (glass, forcefield, etc.), continue raycasting past it
@@ -4542,8 +4710,45 @@ GUI.Changed:Once(function()
 		return true -- Safety fallback
 	end
 
+	-- Fire laser at an alien NPC
+	-- Same checks as fireLaserAtTarget but skips the NPC/player check (aliens are NPCs)
+	-- Uses the Superlaser tool's Handle position for accuracy
+	local function fireLaserAtAlien(alienModel)
+		if not alienModel then return false end
+
+		local targetHumanoid = alienModel:FindFirstChildOfClass("Humanoid")
+		local targetRootPart = alienModel:FindFirstChild("HumanoidRootPart")
+
+		if not targetHumanoid or not targetRootPart then return false end
+
+		-- Check if alien is dead
+		if targetHumanoid.Health <= 0 then return false end
+
+		-- Get the laser gun tool
+		local gun = getLaserGunTool()
+		if not gun then return false end
+
+		-- Check line of sight using the gun's Handle position for better accuracy
+		local gunHandle = gun:FindFirstChild("Handle")
+		if gunHandle and gunHandle:IsA("BasePart") then
+			if not hasLineOfSight(gunHandle, targetRootPart) then
+				return false -- Blocked by a solid part
+			end
+		end
+
+		-- Fire the laser gun at the alien
+		local fireRemote = gun:FindFirstChild("RemoteEvent")
+		if fireRemote and fireRemote:IsA("RemoteEvent") then
+			fireRemote:FireServer(targetRootPart.Position, alienModel)
+			return true
+		end
+
+		return false
+	end
+
 	-- Fire laser at a target player
 	-- Checks: whitelisted (skip), dead (skip), NPC (skip), line of sight (skip if blocked)
+	-- Uses the Superlaser tool's Handle position for accuracy instead of player's HumanoidRootPart
 	local function fireLaserAtTarget(targetPlayer)
 		if not targetPlayer or not targetPlayer.Character then return false end
 
@@ -4565,35 +4770,34 @@ GUI.Changed:Once(function()
 		-- Check if target is an NPC (not a real player)
 		if Players:GetPlayerFromCharacter(targetPlayer.Character) == nil then return false end
 
-		-- Check line of sight (blocked by CanCollide parts)
-		local character = player.Character
-		if character then
-			local myRootPart = character:FindFirstChild("HumanoidRootPart")
-			if myRootPart then
-				if not hasLineOfSight(myRootPart, targetRootPart) then
-					return false -- Blocked by a solid part
-				end
+		-- Get the laser gun tool
+		local gun = getLaserGunTool()
+		if not gun then return false end
+
+		-- Check line of sight using the gun's Handle position for better accuracy
+		local gunHandle = gun:FindFirstChild("Handle")
+		if gunHandle and gunHandle:IsA("BasePart") then
+			if not hasLineOfSight(gunHandle, targetRootPart) then
+				return false -- Blocked by a solid part
 			end
 		end
 
 		-- Fire the laser gun
-		local gun = getLaserGunTool()
-		if gun then
-			local fireRemote = gun:FindFirstChild("RemoteEvent")
-			if fireRemote and fireRemote:IsA("RemoteEvent") then
-				fireRemote:FireServer(targetRootPart.Position, targetPlayer.Character)
-				return true
-			end
+		local fireRemote = gun:FindFirstChild("RemoteEvent")
+		if fireRemote and fireRemote:IsA("RemoteEvent") then
+			fireRemote:FireServer(targetRootPart.Position, targetPlayer.Character)
+			return true
 		end
 
 		return false
 	end
 
-	-- Check if either firing mode is active
+	-- Check if any firing mode is active
 	local function shouldLoopBeActive()
 		local rangeActive = rangeEnabledBool and rangeEnabledBool.Value
 		local autoActive = autoShootValue and autoShootValue.Value
-		return rangeActive or autoActive
+		local alienActive = autoShootAlienValue and autoShootAlienValue.Value
+		return rangeActive or autoActive or alienActive
 	end
 	-- Stop laser gun loop
 	local function stopLaserGunLoop()
@@ -4621,11 +4825,11 @@ GUI.Changed:Once(function()
 			-- Rate limiting
 			if tick() - lastFireTime < FIRE_RATE then return end
 
-			-- Find local player's root part
-			local character = player.Character
-			if not character then return end
-			local myRootPart = character:FindFirstChild("HumanoidRootPart")
-			if not myRootPart then return end
+			-- Find the Superlaser tool's position for better accuracy
+			local gun = getLaserGunTool()
+			if not gun then return end
+			local gunHandle = gun:FindFirstChild("Handle")
+			if not gunHandle or not gunHandle:IsA("BasePart") then return end
 
 			local fired = false
 
@@ -4649,9 +4853,30 @@ GUI.Changed:Once(function()
 						if not whitelistData[targetPlayer.Name] then
 							local targetRootPart = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
 							if targetRootPart then
-								local distance = (myRootPart.Position - targetRootPart.Position).Magnitude
+								local distance = (gunHandle.Position - targetRootPart.Position).Magnitude
 								if distance <= currentRangeValue then
 									if fireLaserAtTarget(targetPlayer) then
+										fired = true
+									end
+								end
+							end
+						end
+					end
+				end
+			end
+
+			-- Auto shoot alien: fire at alien NPCs in workspace.Alien folder within range
+			if autoShootAlienValue and autoShootAlienValue.Value then
+				local ALIEN_MAX_RANGE = 3000
+				local alienFolder = workspace:FindFirstChild("Aliens")
+				if alienFolder then
+					for _, descendant in ipairs(alienFolder:GetDescendants()) do
+						if descendant:IsA("Model") and descendant:FindFirstChildOfClass("Humanoid") then
+							local alienRootPart = descendant:FindFirstChild("HumanoidRootPart")
+							if alienRootPart then
+								local distance = (gunHandle.Position - alienRootPart.Position).Magnitude
+								if distance <= ALIEN_MAX_RANGE then
+									if fireLaserAtAlien(descendant) then
 										fired = true
 									end
 								end
@@ -4686,6 +4911,17 @@ GUI.Changed:Once(function()
 	-- Listen for range shoot enabled changes
 	if rangeEnabledBool then
 		rangeEnabledBool:GetPropertyChangedSignal("Value"):Connect(function()
+			if shouldLoopBeActive() then
+				startLaserGunLoop()
+			else
+				stopLaserGunLoop()
+			end
+		end)
+	end
+
+	-- Listen for auto shoot alien enabled changes
+	if autoShootAlienValue then
+		autoShootAlienValue:GetPropertyChangedSignal("Value"):Connect(function()
 			if shouldLoopBeActive() then
 				startLaserGunLoop()
 			else
@@ -4779,6 +5015,7 @@ GUI.Changed:Once(function()
 	-- Initial UI update
 	refreshBlacklistSearchResults()
 	refreshWhitelistPlayerList()
+	-- Alien auto shooting (implemented)
 
 	-- Print initialization complete
 	print("============================================")

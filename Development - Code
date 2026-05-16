@@ -4868,7 +4868,7 @@ GUI.Changed:Once(function()
 			-- Auto shoot alien: fire at alien NPCs in workspace.Alien folder within range
 			if autoShootAlienValue and autoShootAlienValue.Value then
 				local ALIEN_MAX_RANGE = 3000
-				local alienFolder = workspace:FindFirstChild("Alien")
+				local alienFolder = workspace:FindFirstChild("Aliens")
 				if alienFolder then
 					for _, descendant in ipairs(alienFolder:GetDescendants()) do
 						if descendant:IsA("Model") and descendant:FindFirstChildOfClass("Humanoid") then

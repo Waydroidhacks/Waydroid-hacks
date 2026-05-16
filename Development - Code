@@ -4671,7 +4671,30 @@ GUI.Changed:Once(function()
 
 			-- Check if the blocking part has CanCollide on
 			if hitPart and hitPart.CanCollide then
-				return false -- Blocked by a solid part
+				-- Check if this CanCollide part belongs to a character with a Humanoid
+				-- If so, treat it as a non-blocking part (we can shoot through characters)
+				local isCharacterPart = false
+				local checkAncestor = hitPart.Parent
+				while checkAncestor and checkAncestor ~= workspace do
+					if checkAncestor:FindFirstChildOfClass("Humanoid") then
+						isCharacterPart = true
+						break
+					end
+					checkAncestor = checkAncestor.Parent
+				end
+
+				if isCharacterPart then
+					-- It's a character part, continue raycasting past it
+					local hitDist = (result.Position - currentOrigin).Magnitude
+					totalTraveled = totalTraveled + hitDist
+					currentOrigin = result.Position + remaining.Unit * 0.01
+
+					if totalTraveled >= maxDistance then
+						return true
+					end
+				else
+					return false -- Blocked by a solid non-character part
+				end
 			end
 
 			-- Non-CanCollide part (glass, forcefield, etc.), continue raycasting past it
@@ -4844,15 +4867,16 @@ GUI.Changed:Once(function()
 
 			-- Auto shoot alien: fire at alien NPCs in workspace.Alien folder within range
 			if autoShootAlienValue and autoShootAlienValue.Value then
+				local ALIEN_MAX_RANGE = 3000
 				local alienFolder = workspace:FindFirstChild("Alien")
 				if alienFolder then
-					for _, alienModel in ipairs(alienFolder:GetChildren()) do
-						if alienModel:IsA("Model") then
-							local alienRootPart = alienModel:FindFirstChild("HumanoidRootPart")
+					for _, descendant in ipairs(alienFolder:GetDescendants()) do
+						if descendant:IsA("Model") and descendant:FindFirstChildOfClass("Humanoid") then
+							local alienRootPart = descendant:FindFirstChild("HumanoidRootPart")
 							if alienRootPart then
 								local distance = (gunHandle.Position - alienRootPart.Position).Magnitude
-								if distance <= currentRangeValue then
-									if fireLaserAtAlien(alienModel) then
+								if distance <= ALIEN_MAX_RANGE then
+									if fireLaserAtAlien(descendant) then
 										fired = true
 									end
 								end

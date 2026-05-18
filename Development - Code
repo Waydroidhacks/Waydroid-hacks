@@ -4611,6 +4611,26 @@ GUI.Changed:Once(function()
 		end)
 	end
 
+	-- Auto shoot zombie toggle
+	local autoShootZombieFrame = GUISections.Gunoptions:FindFirstChild("Auto shoot zombies")
+	local autoShootZombieEnabledFrame = autoShootZombieFrame and autoShootZombieFrame:FindFirstChild("Enabled")
+	local autoShootZombieButton = autoShootZombieEnabledFrame and autoShootZombieEnabledFrame:FindFirstChild("TextButton")
+	local autoShootZombieValue = autoShootZombieEnabledFrame and autoShootZombieEnabledFrame:FindFirstChild("Enabled")
+
+	if autoShootZombieButton and autoShootZombieValue then
+		local function updateAutoShootZombieButtonText()
+			autoShootZombieButton.Text = autoShootZombieValue.Value and "Enabled: True" or "Enabled: False"
+		end
+
+		updateAutoShootZombieButtonText()
+
+		autoShootZombieButton.Activated:Connect(function()
+			playClickSound()
+			autoShootZombieValue.Value = not autoShootZombieValue.Value
+			updateAutoShootZombieButtonText()
+		end)
+	end
+
 	-- ============================================
 	-- Segment 5: Laser Gun Firing System
 	-- ============================================
@@ -4797,7 +4817,8 @@ GUI.Changed:Once(function()
 		local rangeActive = rangeEnabledBool and rangeEnabledBool.Value
 		local autoActive = autoShootValue and autoShootValue.Value
 		local alienActive = autoShootAlienValue and autoShootAlienValue.Value
-		return rangeActive or autoActive or alienActive
+		local zombieActive = autoShootZombieValue and autoShootZombieValue.Value
+		return rangeActive or autoActive or alienActive or zombieActive
 	end
 	-- Stop laser gun loop
 	local function stopLaserGunLoop()
@@ -4886,6 +4907,31 @@ GUI.Changed:Once(function()
 				end
 			end
 
+			-- Auto shoot zombies: fire at players with TempStats.IsZombie = true within 1500 range
+			if autoShootZombieValue and autoShootZombieValue.Value then
+				local ZOMBIE_MAX_RANGE = 1500
+				for _, targetPlayer in ipairs(Players:GetPlayers()) do
+					if targetPlayer ~= player and targetPlayer.Character then
+						-- Check if player has TempStats.IsZombie = true
+						local tempStats = targetPlayer:FindFirstChild("TempStats")
+						if tempStats then
+							local isZombieBool = tempStats:FindFirstChild("IsZombie")
+							if isZombieBool and isZombieBool:IsA("BoolValue") and isZombieBool.Value then
+								local targetRootPart = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+								if targetRootPart then
+									local distance = (gunHandle.Position - targetRootPart.Position).Magnitude
+									if distance <= ZOMBIE_MAX_RANGE then
+										if fireLaserAtTarget(targetPlayer) then
+											fired = true
+										end
+									end
+								end
+							end
+						end
+					end
+				end
+			end
+
 			if fired then
 				lastFireTime = tick()
 			end
@@ -4922,6 +4968,17 @@ GUI.Changed:Once(function()
 	-- Listen for auto shoot alien enabled changes
 	if autoShootAlienValue then
 		autoShootAlienValue:GetPropertyChangedSignal("Value"):Connect(function()
+			if shouldLoopBeActive() then
+				startLaserGunLoop()
+			else
+				stopLaserGunLoop()
+			end
+		end)
+	end
+
+	-- Listen for auto shoot zombie enabled changes
+	if autoShootZombieValue then
+		autoShootZombieValue:GetPropertyChangedSignal("Value"):Connect(function()
 			if shouldLoopBeActive() then
 				startLaserGunLoop()
 			else
@@ -5016,7 +5073,8 @@ GUI.Changed:Once(function()
 	refreshBlacklistSearchResults()
 	refreshWhitelistPlayerList()
 	-- Alien auto shooting (implemented)
-
+	-- Zombie auto shooting (implemented)
+	
 	-- Print initialization complete
 	print("============================================")
 	print("Laser Gun Menu System Fully Initialized")

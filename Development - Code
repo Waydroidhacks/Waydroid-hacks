@@ -4066,6 +4066,8 @@ GUI.Changed:Once(function()
 	local blacklistPlayerTemplate = blacklistScrollingFrame and blacklistScrollingFrame:FindFirstChild("Player")
 	local blacklistSearchFrame = GUISections.Blacklist:FindFirstChild("Search")
 	local blacklistSearchTextBox = blacklistSearchFrame and blacklistSearchFrame:FindFirstChild("TextBox")
+	local whitelistSearchFrame = GUISections.Whitelist:FindFirstChild("Search")
+	local whitelistSearchTextBox = whitelistSearchFrame and whitelistSearchFrame:FindFirstChild("TextBox")
 
 	-- Hide templates initially
 	if whitelistPlayerTemplate then
@@ -4182,7 +4184,8 @@ GUI.Changed:Once(function()
 	end
 
 	-- Create a player entry frame
-	local function createPlayerEntry(playerName, parentFrame, template)
+	-- listType: "whitelist", "blacklist", or nil (for search results with no initial status)
+	local function createPlayerEntry(playerName, parentFrame, template, listType)
 		if not template or not parentFrame then return nil end
 
 		local entry = template:Clone()
@@ -4208,15 +4211,41 @@ GUI.Changed:Once(function()
 		-- Set up the click handler on the Whitelisted/Blacklisted button
 		local actionButton = getPlayerEntryButton(entry)
 		if actionButton then
-			actionButton.Text = playerName
-			-- Click handler for removing from list
+			-- Determine button text based on listType and parent frame
+			local isWhitelistFrame = (parentFrame == whitelistScrollingFrame)
+			local isBlacklistFrame = (parentFrame == blacklistScrollingFrame)
+
+			if listType == "whitelist" then
+				actionButton.Text = "Whitelisted: True"
+			elseif listType == "blacklist" then
+				actionButton.Text = "Blacklisted: True"
+			elseif isWhitelistFrame then
+				actionButton.Text = "Whitelisted: False"
+			elseif isBlacklistFrame then
+				actionButton.Text = "Blacklisted: False"
+			else
+				actionButton.Text = playerName
+			end
+
+			-- Click handler: toggle the player's status
 			actionButton.Activated:Connect(function()
 				playClickSound()
-				-- Determine which list this entry belongs to and remove
-				if parentFrame == whitelistScrollingFrame then
+				if listType == "whitelist" then
+					-- Already whitelisted -> remove
 					removeFromWhitelist(playerName)
-				elseif parentFrame == blacklistScrollingFrame then
+					refreshWhitelistSearchResults()
+				elseif listType == "blacklist" then
+					-- Already blacklisted -> remove
 					removeFromBlacklist(playerName)
+					refreshBlacklistSearchResults()
+				elseif isWhitelistFrame then
+					-- Not yet whitelisted -> add
+					addToWhitelist(playerName)
+					refreshWhitelistSearchResults()
+				elseif isBlacklistFrame then
+					-- Not yet blacklisted -> add
+					addToBlacklist(playerName)
+					refreshBlacklistSearchResults()
 				end
 			end)
 		end
@@ -4231,7 +4260,7 @@ GUI.Changed:Once(function()
 		-- Don't create duplicate entries
 		if playerListEntries[playerName .. "_whitelist"] then return end
 
-		local entry = createPlayerEntry(playerName, whitelistScrollingFrame, whitelistPlayerTemplate)
+		local entry = createPlayerEntry(playerName, whitelistScrollingFrame, whitelistPlayerTemplate, "whitelist")
 		if entry then
 			playerListEntries[playerName .. "_whitelist"] = entry
 			setPlayerEntryColor(entry, "whitelist")
@@ -4245,7 +4274,7 @@ GUI.Changed:Once(function()
 		-- Don't create duplicate entries
 		if playerListEntries[playerName .. "_blacklist"] then return end
 
-		local entry = createPlayerEntry(playerName, blacklistScrollingFrame, blacklistPlayerTemplate)
+		local entry = createPlayerEntry(playerName, blacklistScrollingFrame, blacklistPlayerTemplate, "blacklist")
 		if entry then
 			playerListEntries[playerName .. "_blacklist"] = entry
 			setPlayerEntryColor(entry, "blacklist")
@@ -4392,15 +4421,6 @@ GUI.Changed:Once(function()
 				local entry = createPlayerEntry(plrName, blacklistScrollingFrame, blacklistPlayerTemplate)
 				if entry then
 					setPlayerEntryColor(entry, "none")
-					-- Override click handler for adding to blacklist
-					-- The button is inside the Blacklisted frame, not in [Display name,Username]
-					local actionButton = getPlayerEntryButton(entry)
-					if actionButton then
-						actionButton.Activated:Connect(function()
-							playClickSound()
-							addToBlacklist(plrName)
-						end)
-					end
 				end
 			end
 		end
@@ -4657,8 +4677,9 @@ GUI.Changed:Once(function()
 	end
 
 	-- Check if there is a clear line of sight to the target
-	-- Returns false if a CanCollide part is blocking the path
-	local function hasLineOfSight(myRootPart, targetRootPart)
+	-- strictCollision: when true, follows Superlaser design - CanCollide off = pass through, CanCollide on = blocked, no exceptions
+	-- When false (aliens only), allows shooting through character parts even if CanCollide is on
+	local function hasLineOfSight(myRootPart, targetRootPart, strictCollision)
 		local origin = myRootPart.Position
 		local targetPos = targetRootPart.Position
 		local direction = targetPos - origin
@@ -4668,7 +4689,24 @@ GUI.Changed:Once(function()
 
 		local rayParams = RaycastParams.new()
 		rayParams.FilterType = Enum.RaycastFilterType.Exclude
-		rayParams.FilterDescendantsInstances = {player.Character}
+
+		if strictCollision then
+			-- Strict collision mode: only exclude local player parts with CanCollide = false
+			-- CanCollide = true parts (including own HumanoidRootPart) will block the shot
+			local excludeParts = {}
+			local character = player.Character
+			if character then
+				for _, descendant in ipairs(character:GetDescendants()) do
+					if descendant:IsA("BasePart") and not descendant.CanCollide then
+						table.insert(excludeParts, descendant)
+					end
+				end
+			end
+			rayParams.FilterDescendantsInstances = excludeParts
+		else
+			-- Default behavior (aliens): exclude entire local player character
+			rayParams.FilterDescendantsInstances = {player.Character}
+		end
 
 		local currentOrigin = origin
 		local totalTraveled = 0
@@ -4689,31 +4727,40 @@ GUI.Changed:Once(function()
 				return true -- Hit the target, clear line of sight
 			end
 
-			-- Check if the blocking part has CanCollide on
-			if hitPart and hitPart.CanCollide then
-				-- Check if this CanCollide part belongs to a character with a Humanoid
-				-- If so, treat it as a non-blocking part (we can shoot through characters)
-				local isCharacterPart = false
-				local checkAncestor = hitPart.Parent
-				while checkAncestor and checkAncestor ~= workspace do
-					if checkAncestor:FindFirstChildOfClass("Humanoid") then
-						isCharacterPart = true
-						break
-					end
-					checkAncestor = checkAncestor.Parent
+			if strictCollision then
+				-- Strict collision mode: CanCollide on = blocked, CanCollide off = pass through
+				-- No special handling for character parts - everything is treated the same
+				if hitPart and hitPart.CanCollide then
+					return false -- Blocked by any CanCollide part, no exceptions
 				end
-
-				if isCharacterPart then
-					-- It's a character part, continue raycasting past it
-					local hitDist = (result.Position - currentOrigin).Magnitude
-					totalTraveled = totalTraveled + hitDist
-					currentOrigin = result.Position + remaining.Unit * 0.01
-
-					if totalTraveled >= maxDistance then
-						return true
+				-- Non-CanCollide part, continue raycasting past it
+			else
+				-- Default behavior (aliens): check if CanCollide part belongs to a character
+				if hitPart and hitPart.CanCollide then
+					-- Check if this CanCollide part belongs to a character with a Humanoid
+					-- If so, treat it as a non-blocking part (we can shoot through characters)
+					local isCharacterPart = false
+					local checkAncestor = hitPart.Parent
+					while checkAncestor and checkAncestor ~= workspace do
+						if checkAncestor:FindFirstChildOfClass("Humanoid") then
+							isCharacterPart = true
+							break
+						end
+						checkAncestor = checkAncestor.Parent
 					end
-				else
-					return false -- Blocked by a solid non-character part
+
+					if isCharacterPart then
+						-- It's a character part, continue raycasting past it
+						local hitDist = (result.Position - currentOrigin).Magnitude
+						totalTraveled = totalTraveled + hitDist
+						currentOrigin = result.Position + remaining.Unit * 0.01
+
+						if totalTraveled >= maxDistance then
+							return true
+						end
+					else
+						return false -- Blocked by a solid non-character part
+					end
 				end
 			end
 
@@ -4733,6 +4780,7 @@ GUI.Changed:Once(function()
 	-- Fire laser at an alien NPC
 	-- Same checks as fireLaserAtTarget but skips the NPC/player check (aliens are NPCs)
 	-- Uses the Superlaser tool's Handle position for accuracy
+	-- Uses non-strict collision: allows shooting through character parts even with CanCollide on
 	local function fireLaserAtAlien(alienModel)
 		if not alienModel then return false end
 
@@ -4748,11 +4796,11 @@ GUI.Changed:Once(function()
 		local gun = getLaserGunTool()
 		if not gun then return false end
 
-		-- Check line of sight using the gun's Handle position for better accuracy
+		-- Check line of sight using non-strict collision (aliens: can shoot through character parts)
 		local gunHandle = gun:FindFirstChild("Handle")
 		if gunHandle and gunHandle:IsA("BasePart") then
-			if not hasLineOfSight(gunHandle, targetRootPart) then
-				return false -- Blocked by a solid part
+			if not hasLineOfSight(gunHandle, targetRootPart, false) then
+				return false -- Blocked by a solid non-character part
 			end
 		end
 
@@ -4769,6 +4817,7 @@ GUI.Changed:Once(function()
 	-- Fire laser at a target player
 	-- Checks: whitelisted (skip), dead (skip), NPC (skip), line of sight (skip if blocked)
 	-- Uses the Superlaser tool's Handle position for accuracy instead of player's HumanoidRootPart
+	-- Uses strict collision: CanCollide off = pass through, CanCollide on = blocked (Superlaser design)
 	local function fireLaserAtTarget(targetPlayer)
 		if not targetPlayer or not targetPlayer.Character then return false end
 
@@ -4794,11 +4843,11 @@ GUI.Changed:Once(function()
 		local gun = getLaserGunTool()
 		if not gun then return false end
 
-		-- Check line of sight using the gun's Handle position for better accuracy
+		-- Check line of sight using strict collision (Superlaser design: CanCollide on = blocked)
 		local gunHandle = gun:FindFirstChild("Handle")
 		if gunHandle and gunHandle:IsA("BasePart") then
-			if not hasLineOfSight(gunHandle, targetRootPart) then
-				return false -- Blocked by a solid part
+			if not hasLineOfSight(gunHandle, targetRootPart, true) then
+				return false -- Blocked by a CanCollide part
 			end
 		end
 
@@ -5012,13 +5061,13 @@ GUI.Changed:Once(function()
 	-- ============================================
 	-- Whitelist Player Population Function
 	-- ============================================
-	-- Populates the whitelist ScrollingFrame with all available players
+	-- Populates the whitelist ScrollingFrame with filtered players
 	-- so users can click to add them to the whitelist
 
-	local function refreshWhitelistPlayerList()
+	local function refreshWhitelistSearchResults()
 		if not whitelistScrollingFrame or not whitelistPlayerTemplate then return end
 
-		-- Clear existing entries (but keep the template)
+		-- Clear existing entries (but keep the template and whitelisted/blacklisted players)
 		for _, child in ipairs(whitelistScrollingFrame:GetChildren()) do
 			if child:IsA("Frame") and child.Name ~= "Player" then
 				-- Check if this is a search result (not in playerListEntries)
@@ -5030,40 +5079,43 @@ GUI.Changed:Once(function()
 			end
 		end
 
-		-- Add all players to the whitelist list
-		for _, plr in ipairs(Players:GetPlayers()) do
-			if plr ~= player then
-				local plrName = plr.Name
-				-- Skip if already in whitelist or blacklist
-				if not whitelistData[plrName] and not blacklistData[plrName] then
-					local entry = createPlayerEntry(plrName, whitelistScrollingFrame, whitelistPlayerTemplate)
-					if entry then
-						setPlayerEntryColor(entry, "none")
-						-- Override click handler for adding to whitelist
-						local actionButton = getPlayerEntryButton(entry)
-						if actionButton then
-							actionButton.Activated:Connect(function()
-								playClickSound()
-								addToWhitelist(plrName)
-								refreshWhitelistPlayerList()
-							end)
-						end
-					end
+		-- Get search text
+		local searchText = whitelistSearchTextBox and whitelistSearchTextBox.Text or ""
+		local filtered = filterPlayers(searchText)
+
+		-- Add filtered players to the whitelist list
+		for _, plrName in ipairs(filtered) do
+			-- Skip if already in whitelist or blacklist
+			if not whitelistData[plrName] and not blacklistData[plrName] then
+				local entry = createPlayerEntry(plrName, whitelistScrollingFrame, whitelistPlayerTemplate)
+				if entry then
+					setPlayerEntryColor(entry, "none")
 				end
 			end
 		end
+	end
+
+	-- Handle whitelist search text changes
+	if whitelistSearchTextBox then
+		whitelistSearchTextBox:GetPropertyChangedSignal("Text"):Connect(function()
+			if searchDebounce then return end
+			searchDebounce = true
+			task.wait(0.1)
+			searchDebounce = false
+			refreshWhitelistSearchResults()
+		end)
 	end
 
 	-- Update player list when players join/leave
 	local function onPlayerAddedForWhitelist(newPlayer)
 		if newPlayer == player then return end
 		task.wait(0.1) -- Small delay to ensure player is fully loaded
-		refreshWhitelistPlayerList()
+		refreshWhitelistSearchResults()
 	end
 
 	local function onPlayerRemovingForWhitelist(leavingPlayer)
 		if leavingPlayer == player then return end
-		refreshWhitelistPlayerList()
+		refreshWhitelistSearchResults()
 	end
 
 	Players.PlayerAdded:Connect(onPlayerAddedForWhitelist)
@@ -5071,8 +5123,9 @@ GUI.Changed:Once(function()
 
 	-- Initial UI update
 	refreshBlacklistSearchResults()
-	refreshWhitelistPlayerList()
+	refreshWhitelistSearchResults()
 	-- Alien auto shooting (implemented)
+	
 	-- Zombie auto shooting (implemented)
 	
 	-- Print initialization complete

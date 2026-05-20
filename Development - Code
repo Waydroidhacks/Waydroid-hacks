@@ -4055,13 +4055,13 @@ GUI.Changed:Once(function()
 	local rememberedPlayers = {} -- {playerName = "whitelist" or "blacklist"}
 	local displayNameMap = {} -- {playerName = displayName}
 
-	-- Get display text: "DisplayName [@Username]" or just "Username" if display name matches
+	-- Get display text: always show "DisplayName [@Username]" format
 	local function getDisplayText(playerName)
 		local displayName = displayNameMap[playerName]
 		if displayName and displayName ~= playerName then
 			return displayName .. " [@" .. playerName .. "]"
 		else
-			return playerName
+			return playerName .. " [@" .. playerName .. "]"
 		end
 	end
 
@@ -4200,12 +4200,7 @@ GUI.Changed:Once(function()
 	local function createPlayerEntry(playerName, parentFrame, template, listType)
 		if not template or not parentFrame then return nil end
 
-		-- Skip entries where display name matches username (no [@username] suffix needed)
 		local displayText = getDisplayText(playerName)
-		if displayText == playerName then
-			return nil
-		end
-
 		local entry = template:Clone()
 		entry.Name = playerName
 		entry.Visible = true

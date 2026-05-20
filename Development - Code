@@ -4200,13 +4200,18 @@ GUI.Changed:Once(function()
 	local function createPlayerEntry(playerName, parentFrame, template, listType)
 		if not template or not parentFrame then return nil end
 
+		-- Skip entries where display name matches username (no [@username] suffix needed)
+		local displayText = getDisplayText(playerName)
+		if displayText == playerName then
+			return nil
+		end
+
 		local entry = template:Clone()
 		entry.Name = playerName
 		entry.Visible = true
 		entry.Parent = parentFrame
 
 		-- Set the text in the [Display name,Username] frame
-		local displayText = getDisplayText(playerName)
 		local textFrame = getPlayerEntryText(entry)
 		if textFrame then
 			-- Check for TextLabel in the text frame

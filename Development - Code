@@ -4058,6 +4058,7 @@ GUI.Changed:Once(function()
 	local addPlayerToWhitelistUI, addPlayerToBlacklistUI
 	local removePlayerFromWhitelistUI, removePlayerFromBlacklistUI
 	local setPlayerEntryColor, updateAllPlayerListColors
+	local refreshBlacklistSearchResults, refreshWhitelistSearchResults
 
 	-- Get UI elements
 	local whitelistScrollingFrame = GUISections.Whitelist:FindFirstChild("ScrollingFrame")
@@ -4226,7 +4227,7 @@ GUI.Changed:Once(function()
 			else
 				actionButton.Text = playerName
 			end
-
+			
 			-- Click handler: toggle the player's status
 			actionButton.Activated:Connect(function()
 				playClickSound()
@@ -4254,7 +4255,7 @@ GUI.Changed:Once(function()
 	end
 
 	-- Add player to whitelist UI
-	function addPlayerToWhitelistUI(playerName)
+	addPlayerToWhitelistUI = function(playerName)
 		if not whitelistScrollingFrame or not whitelistPlayerTemplate then return end
 
 		-- Don't create duplicate entries
@@ -4268,7 +4269,7 @@ GUI.Changed:Once(function()
 	end
 
 	-- Add player to blacklist UI
-	function addPlayerToBlacklistUI(playerName)
+	addPlayerToBlacklistUI = function(playerName)
 		if not blacklistScrollingFrame or not blacklistPlayerTemplate then return end
 
 		-- Don't create duplicate entries
@@ -4282,7 +4283,7 @@ GUI.Changed:Once(function()
 	end
 
 	-- Remove player from whitelist UI
-	function removePlayerFromWhitelistUI(playerName)
+	removePlayerFromWhitelistUI = function(playerName)
 		local entry = playerListEntries[playerName .. "_whitelist"]
 		if entry then
 			entry.Parent = nil
@@ -4291,7 +4292,7 @@ GUI.Changed:Once(function()
 	end
 
 	-- Remove player from blacklist UI
-	function removePlayerFromBlacklistUI(playerName)
+	removePlayerFromBlacklistUI = function(playerName)
 		local entry = playerListEntries[playerName .. "_blacklist"]
 		if entry then
 			entry.Parent = nil
@@ -4300,7 +4301,7 @@ GUI.Changed:Once(function()
 	end
 
 	-- Set player entry color based on status
-	function setPlayerEntryColor(entry, status)
+	setPlayerEntryColor = function(entry, status)
 		if not entry then return end
 
 		local uiStroke = entry:FindFirstChild("UIStroke")
@@ -4333,7 +4334,7 @@ GUI.Changed:Once(function()
 	end
 
 	-- Update all player list colors (called when status changes)
-	function updateAllPlayerListColors()
+	updateAllPlayerListColors = function()
 		-- Update whitelist entries
 		for playerName, _ in pairs(whitelistData) do
 			local entry = playerListEntries[playerName .. "_whitelist"]
@@ -4350,6 +4351,8 @@ GUI.Changed:Once(function()
 			end
 		end
 	end
+	
+	
 
 	-- ============================================
 	-- Segment 3: Player Tracking and Search Functionality
@@ -4395,7 +4398,7 @@ GUI.Changed:Once(function()
 	end
 
 	-- Refresh the blacklist ScrollingFrame with filtered results
-	local function refreshBlacklistSearchResults()
+	refreshBlacklistSearchResults = function()
 		if not blacklistScrollingFrame or not blacklistPlayerTemplate then return end
 
 		-- Clear existing search results (but keep whitelisted/blacklisted players)
@@ -4419,6 +4422,38 @@ GUI.Changed:Once(function()
 			-- Skip if already in whitelist or blacklist
 			if not whitelistData[plrName] and not blacklistData[plrName] then
 				local entry = createPlayerEntry(plrName, blacklistScrollingFrame, blacklistPlayerTemplate)
+				if entry then
+					setPlayerEntryColor(entry, "none")
+				end
+			end
+		end
+	end
+
+	-- Refresh the whitelist ScrollingFrame with filtered results
+	refreshWhitelistSearchResults = function()
+		if not whitelistScrollingFrame or not whitelistPlayerTemplate then return end
+
+		-- Clear existing search results (but keep whitelisted/blacklisted players)
+		for _, child in ipairs(whitelistScrollingFrame:GetChildren()) do
+			if child:IsA("Frame") and child.Name ~= "Player" then
+				-- Check if this is a search result (not in playerListEntries)
+				local entryKey = child.Name .. "_whitelist"
+				if not playerListEntries[entryKey] then
+					child.Parent = nil
+					child:Destroy()
+				end
+			end
+		end
+
+		-- Get search text
+		local searchText = whitelistSearchTextBox and whitelistSearchTextBox.Text or ""
+		local filtered = filterPlayers(searchText)
+
+		-- Add filtered players to the whitelist list
+		for _, plrName in ipairs(filtered) do
+			-- Skip if already in whitelist or blacklist
+			if not whitelistData[plrName] and not blacklistData[plrName] then
+				local entry = createPlayerEntry(plrName, whitelistScrollingFrame, whitelistPlayerTemplate)
 				if entry then
 					setPlayerEntryColor(entry, "none")
 				end
@@ -4589,6 +4624,8 @@ GUI.Changed:Once(function()
 			updateAutoShootButtonText()
 		end)
 	end
+
+	
 
 	-- Auto shoot alien toggle
 	local autoShootAlienFrame = GUISections.Gunoptions:FindFirstChild("Auto shoot alien")
@@ -5064,36 +5101,7 @@ GUI.Changed:Once(function()
 	-- Populates the whitelist ScrollingFrame with filtered players
 	-- so users can click to add them to the whitelist
 
-	local function refreshWhitelistSearchResults()
-		if not whitelistScrollingFrame or not whitelistPlayerTemplate then return end
-
-		-- Clear existing entries (but keep the template and whitelisted/blacklisted players)
-		for _, child in ipairs(whitelistScrollingFrame:GetChildren()) do
-			if child:IsA("Frame") and child.Name ~= "Player" then
-				-- Check if this is a search result (not in playerListEntries)
-				local entryKey = child.Name .. "_whitelist"
-				if not playerListEntries[entryKey] then
-					child.Parent = nil
-					child:Destroy()
-				end
-			end
-		end
-
-		-- Get search text
-		local searchText = whitelistSearchTextBox and whitelistSearchTextBox.Text or ""
-		local filtered = filterPlayers(searchText)
-
-		-- Add filtered players to the whitelist list
-		for _, plrName in ipairs(filtered) do
-			-- Skip if already in whitelist or blacklist
-			if not whitelistData[plrName] and not blacklistData[plrName] then
-				local entry = createPlayerEntry(plrName, whitelistScrollingFrame, whitelistPlayerTemplate)
-				if entry then
-					setPlayerEntryColor(entry, "none")
-				end
-			end
-		end
-	end
+	-- (Handled by refreshWhitelistSearchResults defined in Segment 3)
 
 	-- Handle whitelist search text changes
 	if whitelistSearchTextBox then

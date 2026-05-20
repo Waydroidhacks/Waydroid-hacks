@@ -4365,8 +4365,9 @@ GUI.Changed:Once(function()
 	local rangeShootValue = rangeShootFrame and rangeShootFrame:FindFirstChild("Range")
 
 	local autoShootFrame = GUISections.Gunoptions:FindFirstChild("Auto shoot blacklisted")
-	local autoShootButton = autoShootFrame and autoShootFrame:FindFirstChild("TextButton")
-	local autoShootValue = autoShootFrame and autoShootFrame:FindFirstChild("Auto")
+	local autoShootEnabledFrame = autoShootFrame and autoShootFrame:FindFirstChild("Enabled")
+	local autoShootButton = autoShootEnabledFrame and autoShootEnabledFrame:FindFirstChild("TextButton")
+	local autoShootValue = autoShootEnabledFrame and autoShootEnabledFrame:FindFirstChild("Enabled")
 
 	-- Track all players in a list for the blacklist search
 	local allPlayersList = {}
@@ -4613,7 +4614,7 @@ GUI.Changed:Once(function()
 	if autoShootButton and autoShootValue then
 		-- Update button text based on value
 		local function updateAutoShootButtonText()
-			autoShootButton.Text = autoShootValue.Value and "Auto: On" or "Auto: Off"
+			autoShootButton.Text = autoShootValue.Value and "Enabled: True" or "Enabled: False"
 		end
 
 		updateAutoShootButtonText()
@@ -4952,12 +4953,13 @@ GUI.Changed:Once(function()
 				end
 			end
 
-			-- Range shoot: fire at all non-whitelisted players within range
+			-- Range shoot: fire at all players within range (skip whitelisted only if anti-shoot-whitelist is enabled)
 			if rangeEnabledBool and rangeEnabledBool.Value then
 				for _, targetPlayer in ipairs(Players:GetPlayers()) do
 					if targetPlayer ~= player and targetPlayer.Character then
-						-- Skip whitelisted players
-						if not whitelistData[targetPlayer.Name] then
+						-- Skip whitelisted players only when anti-shoot-whitelist is enabled
+						local isWhitelisted = whitelistData[targetPlayer.Name]
+						if not (isWhitelisted and antiShootWhitelistValue and antiShootWhitelistValue.Value) then
 							local targetRootPart = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
 							if targetRootPart then
 								local distance = (gunHandle.Position - targetRootPart.Position).Magnitude

@@ -3345,6 +3345,7 @@ GUI.Changed:Once(function()
 		local antiJailEnabledFrame = antiJailSection:FindFirstChild("Enabled")
 		local antiJailButton = antiJailEnabledFrame and antiJailEnabledFrame:FindFirstChild("TextButton")
 		local antiJailBool = antiJailEnabledFrame and antiJailEnabledFrame:FindFirstChild("Enabled")
+		local antiJailTextLabel = antiJailSection:FindFirstChild("Anti jail") and antiJailSection:FindFirstChild("Anti jail"):FindFirstChild("TextLabel")
 
 		-- Track anti-jail state
 		local antiJailActive = false
@@ -3423,6 +3424,11 @@ GUI.Changed:Once(function()
 
 				local currentTime = timeLabel.Text
 
+				-- Update anti-jail status display with time
+				if antiJailTextLabel then
+					antiJailTextLabel.Text = "Anti-jail active " .. currentTime
+				end
+
 				-- Check if we're in the danger zone
 				if dangerTimes[currentTime] then
 					-- Fire StartVote with a random player
@@ -3444,6 +3450,11 @@ GUI.Changed:Once(function()
 			if not antiJailActive then return end
 
 			antiJailActive = false
+
+			-- Reset anti-jail status display
+			if antiJailTextLabel then
+				antiJailTextLabel.Text = "Anti-jail:"
+			end
 
 			-- Disconnect the heartbeat connection
 			if antiJailConnection then
@@ -3977,8 +3988,8 @@ GUI.Changed:Once(function()
 	-- ============================================
 	-- 19. Only Keyswitch Toggle
 	-- ============================================
-	-- Toggles the keyswitch-only filter for the emergency button autoclicker.
-	-- When enabled, ClickDetectors parented to parts named "StartButton" are skipped.
+	-- Toggles the keyswitch-only filter for the emergency button autoclicker
+	-- Useful for softlocking a server or when you want to avoid hitting the main buttons
 
 	local onlyKeyswitchSection = GUISections.Miscssection:FindFirstChild("Only keyswitch")
 	if onlyKeyswitchSection then
@@ -4013,12 +4024,235 @@ GUI.Changed:Once(function()
 			end
 		end
 	end
+-----------------------------------------------------------------------------------------------------------------------
 
-	-- ============================================
-	-- 20. Looping
-	-- ============================================
-	-- Implementation resides inside the emergency switches section (Section 18)
-	-- for scope access to RunService, fireInstance, and looping state variables.
+	local function getStartVoteRemote()
+		local success, result = pcall(function()
+			local remoteEvents = game:GetService("ReplicatedStorage"):FindFirstChild("RemoteEvents")
+			if not remoteEvents then return nil end
+			local actions = remoteEvents:FindFirstChild("Actions")
+			if not actions then return nil end
+			return actions:FindFirstChild("StartVote")
+		end)
+		return success and result or nil
+	end
+
+	-- Jailing - Remote jail by username
+	local jailRemotelySection = GUISections.Miscssection["Jail remotely"]
+	if jailRemotelySection then
+		local usernameFrame = jailRemotelySection:FindFirstChild("Username")
+		local reasonFrame = jailRemotelySection:FindFirstChild("Reason")
+		local jailFrame = jailRemotelySection:FindFirstChild("Jail")
+
+		local usernameTextBox = usernameFrame and usernameFrame:FindFirstChild("TextBox")
+		local reasonTextBox = reasonFrame and reasonFrame:FindFirstChild("TextBox")
+		local jailButton = jailFrame and jailFrame:FindFirstChild("TextButton")
+
+		if usernameTextBox and jailButton then
+			local voteCooldown = game:GetService("ReplicatedStorage"):FindFirstChild("VoteCooldown")
+			local globalFunctions = game:GetService("ReplicatedStorage"):FindFirstChild("Modules")
+				and game.ReplicatedStorage.Modules:FindFirstChild("GlobalFunctions")
+
+			local formatTime = nil
+			if globalFunctions then
+				local success, mod = pcall(function() return require(globalFunctions) end)
+				if success and mod then
+					formatTime = mod.formatTime
+				end
+			end
+
+			-- Find player by username (exact match, then most similar)
+			local function findPlayerByUsername(username)
+				if not username or username == "" then return nil end
+
+				local players = game:GetService("Players"):GetPlayers()
+
+				-- Check for -self or own username
+				if username == "-self" or string.lower(username) == string.lower(player.Name) then
+					return player
+				end
+
+				-- Exact match (case-insensitive)
+				for _, plr in ipairs(players) do
+					if string.lower(plr.Name) == string.lower(username) then
+						return plr
+					end
+				end
+
+				-- Fuzzy match - find most similar username
+				local bestMatch = nil
+				local bestSimilarity = 0
+
+				for _, plr in ipairs(players) do
+					local plrName = string.lower(plr.Name)
+					local searchName = string.lower(username)
+
+					-- Check if search name is a substring of player name
+					if string.find(plrName, searchName, 1, true) then
+						local similarity = #searchName / #plrName
+						if similarity > bestSimilarity then
+							bestSimilarity = similarity
+							bestMatch = plr
+						end
+					end
+
+					-- Check if player name is a substring of search name
+					if string.find(searchName, plrName, 1, true) then
+						local similarity = #plrName / #searchName
+						if similarity > bestSimilarity then
+							bestSimilarity = similarity
+							bestMatch = plr
+						end
+					end
+				end
+
+				return bestMatch
+			end
+
+			-- Button state management
+			local confirmTimer = nil
+			local isConfirming = false
+			local isOnCooldown = false
+
+			local function updateJailButtonText()
+				if not jailButton then return end
+
+				-- Check cooldown first
+				if voteCooldown and voteCooldown.Value > 0 then
+					isOnCooldown = true
+					jailButton.Interactable = false
+					local cooldownTime = math.round(voteCooldown.Value)
+					if formatTime then
+						jailButton.Text = formatTime(cooldownTime)
+					else
+						jailButton.Text = tostring(cooldownTime) .. "s"
+					end
+					return
+				end
+
+				isOnCooldown = false
+				jailButton.Interactable = true
+
+				if isConfirming then
+					jailButton.Text = "Confirm?"
+					return
+				end
+
+				local username = usernameTextBox.Text
+				local foundPlayer = findPlayerByUsername(username)
+
+				if not foundPlayer then
+					jailButton.Text = "Username required"
+				else
+					jailButton.Text = "Start vote"
+				end
+			end
+
+			-- Monitor username textbox changes for real-time button text updates
+			usernameTextBox:GetPropertyChangedSignal("Text"):Connect(function()
+				if isConfirming then
+					-- Cancel confirm if condition isn't met anymore
+					local username = usernameTextBox.Text
+					local foundPlayer = findPlayerByUsername(username)
+					if not foundPlayer or foundPlayer ~= player then
+						isConfirming = false
+						if confirmTimer then
+							confirmTimer:Cancel()
+							confirmTimer = nil
+						end
+					end
+				end
+				updateJailButtonText()
+			end)
+
+			-- Monitor cooldown changes
+			if voteCooldown then
+				voteCooldown.Changed:Connect(function()
+					updateJailButtonText()
+				end)
+			end
+
+			-- Periodic cooldown update for smooth display
+			task.spawn(function()
+				while jailButton and jailButton.Parent do
+					if voteCooldown and voteCooldown.Value > 0 then
+						updateJailButtonText()
+					end
+					task.wait(0.5)
+				end
+			end)
+
+			-- Initialize button text
+			updateJailButtonText()
+
+			-- Handle button click
+			jailButton.Activated:Connect(function()
+				playClickSound()
+
+				if isOnCooldown then return end
+
+				local username = usernameTextBox.Text
+				local foundPlayer = findPlayerByUsername(username)
+
+				if not foundPlayer then
+					return
+				end
+
+				-- Self-jail confirmation
+				if foundPlayer == player then
+					if isConfirming then
+						-- Confirmed - fire the remote on self
+						isConfirming = false
+						if confirmTimer then
+							confirmTimer:Cancel()
+							confirmTimer = nil
+						end
+
+						local startVoteRemote = getStartVoteRemote()
+						if startVoteRemote then
+							local reason = reasonTextBox and reasonTextBox.Text or ""
+							if reason ~= "" and type(reason) == "string" and string.gsub(reason, " ", "") ~= "" then
+								pcall(function()
+									startVoteRemote:FireServer(reason, foundPlayer)
+								end)
+							else
+								pcall(function()
+									startVoteRemote:FireServer(foundPlayer)
+								end)
+							end
+						end
+						updateJailButtonText()
+						return
+					else
+						-- Start confirm state
+						isConfirming = true
+						updateJailButtonText()
+
+						confirmTimer = task.delay(2, function()
+							isConfirming = false
+							updateJailButtonText()
+						end)
+						return
+					end
+				end
+
+				-- Normal jail - fire remote
+				local startVoteRemote = getStartVoteRemote()
+				if startVoteRemote then
+					local reason = reasonTextBox and reasonTextBox.Text or ""
+					if reason ~= "" and type(reason) == "string" and string.gsub(reason, " ", "") ~= "" then
+						pcall(function()
+							startVoteRemote:FireServer(reason, foundPlayer)
+						end)
+					else
+						pcall(function()
+							startVoteRemote:FireServer(foundPlayer)
+						end)
+					end
+				end
+			end)
+		end
+	end
 
 	print("Segment 3 initialized")
 end)
@@ -5157,6 +5391,110 @@ GUI.Changed:Once(function()
 	-- Alien auto shooting (implemented)
 	
 	-- Zombie auto shooting (implemented)
+	
+	-- Laser gun all
+	--[=[=
+	
+	Heres how this works:
+	1. When you click the laser gun button, it checks if you have it equipped
+	2. If you do, it starts the laser gun loop
+	3. If you don't, it stops the laser gun loop in real-time
+	4. Laser gun loop works by teleporting above any non-whitelisted player's head
+	5. It shoots anyone in a 1500 proximity of target players
+	6. It keeps track of players in a table called "laserGunTargets"
+		The table will list all the players that will get laser guns spammed at them
+	7. The laser gun loop will pause when you unequip the laser gun
+	8. When you equip the laser gun again, it will resume the loop
+	9. The laser gun loop will stop when you click the kill all button while it's green
+	10. The button will be a toggle, when on, it becomes green, when off, its black
+	11. When you click the kill all button, it will stop the laser gun loop
+	12. Make the loop a toggle
+	The buttons are at:
+	
+	GUISections.Gunoptionsgame.["Kill all"]["Kill all"].TextButton -- The button that starts the kill all loop
+	GUISections.Gunoptionsgame.["Kill all"]["Looped:"].TextButton -- the button that if its true, when loop uh "Neutralizes" all players, it will continue again; MAKE SURE TO MAKE IT SWITCH TO THE LOOP IN REAL-TIME
+	
+	-- Extra specifications:
+	
+	GUISections.Gunoptionsgame.["Extra configuration"]["Specification textbox"] -- This is the extra configuration textbox:
+	
+	1. The laser gun loop will use the text in the textbox to determine what to do
+	-- Avaliable instructions:
+	
+	"-" This is a dash prefix, a "," comma will be a prefix for adding more instructions into the textbox
+
+	"--" Means exclude, incompatible with some instructions
+	
+	"---" Means that the user MEANS it, and wants to exactly do the command
+	
+	"----" Is specifically for the prioritizeblacklist, will only shoot the blacklist, regardless if the option to shoot blacklisted is off or not
+	
+	
+	-- The currently avaliable specification instructions:
+===================================================================================================================================================================================
+	-ignorewhitelist [aliases: igw, ignorewl,igwhitelist] bypasses the whitelist restriction, allowing whitelisted players to be shot anyway
+	-- example: -ignorewhitelist {Incompatble with: priorotizeblacklist, pbl, prioritizebl, pribl}}
+	-priorotizeblacklist [aliases: pbl, prioritizebl, pribl] makes the blacklist take priority over normal player's, targeting them first
+	-- example: -prioritizeblacklist
+	-tooltarget [aliases: tt, ttarget , tooluser, toolholder] targets the player holding the tool, or simply having it in the backpack, not the tool itself
+	- autoequip [aliases: auto, aeq, autoeq] automatically equips the laser gun when the kill all loop starts, and unequips it when the kill all loop ends
+	-- example: -autoequip
+	- targetzombies [aliases: targetz, target zombies, targetzombies, target zombies, targetzombie, targetzomb, tz] targets zombies instead of players
+	-- example: -targetzombies
+	
+	Aliases are just a different way to specify a same instruction, they will have the exact same functionality
+	
+	HOW EACH ONE WILL WORK, AND ITS COMPATIBILITY:
+------------------------------------------------------------------------------------------------------------------
+-ignorewhitelist
+this one will work by:
+1. Getting the whitelist directly the gun menu and reading it directly
+2. Checking if the avoid shooting whitelisted players is on
+3. And skipping shooting the whitelisted players
+
+Extra dashes compatability:
+
+Incompatible with --, but is compatible with --- to not shoot whitelisted players even when that option is toggled off
+------------------------------------------------------------------------------------------------------------------
+-priorotizeblacklist
+this one will work by:
+1. Getting the blacklist directly the gun menu and reading it directly
+2. Checking if the shooting blacklisted is enabled
+
+Extra dashes compatability:
+
+Incompatible with --, but --- will make it shoot blacklisted players anyway even when the option is off, with ----, it will shoot
+
+------------------------------------------------------------------------------------------------------------------
+tooltarget
+this one will be a bit different:
+1. It will instead;
+2. Get the tool the player is holding, or the tool in the player's backpack, and target it
+3. And then only target the player holding the tool, or the player with the tool in their backpack
+
+Extra dashes compatability:
+
+Compatible with all dashes! the -- dash will exclude the player holding the tool from kill list, and --- will not just priorotize, but only target the players with said tool
+
+
+
+------------------------------------------------------------------------------------------------------------------
+===================================================================================================================================================================================
+	
+	More:
+	Extra specifications is supposted to either limit or change how it works
+	
+	-- Examples:
+	
+	tooltarget command will ONLY allow players with that specific tool to get targeted, with only the whitelist being the restriction unless ignorewhitelist is used
+	
+	-- Example: -tooltarget BlueRock -- Players with that item will get targeted next time it starts
+
+	-- Example: -ignorewhitelist
+
+	
+	]=]
+	
 	
 	-- Print initialization complete
 	print("============================================")

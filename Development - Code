@@ -4038,7 +4038,7 @@ GUI.Changed:Once(function()
 	end
 
 	-- Jailing - Remote jail by username
-	local jailRemotelySection = GUISections.Miscssection["Jail remotely"]
+	local jailRemotelySection = GUISections.Miscssection:FindFirstChild("Jail remotely")
 	if jailRemotelySection then
 		local usernameFrame = jailRemotelySection:FindFirstChild("Username")
 		local reasonFrame = jailRemotelySection:FindFirstChild("Reason")

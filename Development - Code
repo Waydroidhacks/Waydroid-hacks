@@ -4038,9 +4038,9 @@ GUI.Changed:Once(function()
 	local jailRemotelySection = GUISections.Miscssection:FindFirstChild("Jail remotely")
 	print("[JailDebug] jailRemotelySection:", jailRemotelySection)
 	if jailRemotelySection then
-		local usernameFrame = jailRemotelySection:FindFirstChild("Username")
-		local reasonFrame = jailRemotelySection:FindFirstChild("Reason")
-		local jailFrame = jailRemotelySection:FindFirstChild("Jail")
+		local usernameFrame = jailRemotelySection:FindFirstChild("Username") or jailRemotelySection:WaitForChild("Username", 5)
+		local reasonFrame = jailRemotelySection:FindFirstChild("Reason") or jailRemotelySection:WaitForChild("Reason", 5)
+		local jailFrame = jailRemotelySection:FindFirstChild("Jail") or jailRemotelySection:WaitForChild("Jail", 5)
 
 		local usernameTextBox = usernameFrame and (usernameFrame:FindFirstChildOfClass("TextBox") or usernameFrame:WaitForChild("TextBox", 5))
 		local reasonTextBox = reasonFrame and (reasonFrame:FindFirstChildOfClass("TextBox") or reasonFrame:WaitForChild("TextBox", 5))
@@ -4241,12 +4241,12 @@ GUI.Changed:Once(function()
 								print("[JailDebug] Firing with reason")
 								print(reason)
 								pcall(function()
-									startVoteRemote:FireServer(foundPlayer,reasonTextBox.Text)
+									startVoteRemote:FireServer(foundPlayer,reason)
 								end)
 							else
 								print("[JailDebug] Firing without reason")
 								pcall(function()
-									startVoteRemote:FireServer(foundPlayer,reasonTextBox.Text)
+									startVoteRemote:FireServer(foundPlayer)
 								end)
 							end
 						end

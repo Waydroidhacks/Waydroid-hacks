@@ -3345,7 +3345,6 @@ GUI.Changed:Once(function()
 		local antiJailEnabledFrame = antiJailSection:FindFirstChild("Enabled")
 		local antiJailButton = antiJailEnabledFrame and antiJailEnabledFrame:FindFirstChild("TextButton")
 		local antiJailBool = antiJailEnabledFrame and antiJailEnabledFrame:FindFirstChild("Enabled")
-		local antiJailTextLabel = antiJailSection:FindFirstChild("Anti jail") and antiJailSection:FindFirstChild("Anti jail"):FindFirstChild("TextLabel")
 
 		-- Track anti-jail state
 		local antiJailActive = false
@@ -3410,6 +3409,7 @@ GUI.Changed:Once(function()
 		local function startAntiJail()
 			if antiJailActive then return end
 			antiJailActive = true
+			antiJailActiveFlag = true
 
 			local RunService = game:GetService("RunService")
 			local lastTimeText = ""
@@ -3424,10 +3424,8 @@ GUI.Changed:Once(function()
 
 				local currentTime = timeLabel.Text
 
-				-- Update anti-jail button text with time
-				if antiJailButton then
-					antiJailButton.Text = "Enabled: True " .. currentTime
-				end
+				-- Store current time for the jail remotely section
+				antiJailCurrentTime = currentTime
 
 				-- Check if we're in the danger zone
 				if dangerTimes[currentTime] then
@@ -3451,8 +3449,9 @@ GUI.Changed:Once(function()
 
 			antiJailActive = false
 
-			-- Reset anti-jail button text
-			updateAntiJailButtonText()
+			-- Reset shared anti-jail state
+			antiJailCurrentTime = ""
+			antiJailActiveFlag = false
 
 			-- Disconnect the heartbeat connection
 			if antiJailConnection then
@@ -4145,15 +4144,24 @@ GUI.Changed:Once(function()
 					return
 				end
 
+				-- Build button text
 				local username = usernameTextBox.Text
 				local foundPlayer, isExactMatch = findPlayerByUsername(username)
 
+				local baseText = nil
 				if not foundPlayer then
-					jailButton.Text = "Username required"
+					baseText = "Username required"
 				elseif isExactMatch then
-					jailButton.Text = "Start vote"
+					baseText = "Start vote"
 				else
-					jailButton.Text = "Start vote (" .. foundPlayer.Name .. ")"
+					baseText = "Start vote (" .. foundPlayer.Name .. ")"
+				end
+
+				-- Append anti-jail time if active
+				if antiJailActiveFlag and antiJailCurrentTime ~= "" then
+					jailButton.Text = baseText .. " " .. antiJailCurrentTime
+				else
+					jailButton.Text = baseText
 				end
 			end
 
@@ -4181,10 +4189,10 @@ GUI.Changed:Once(function()
 				end)
 			end
 
-			-- Periodic cooldown update for smooth display
+			-- Periodic update for cooldown and anti-jail time display
 			task.spawn(function()
 				while jailButton and jailButton.Parent do
-					if voteCooldown and voteCooldown.Value > 0 then
+					if (voteCooldown and voteCooldown.Value > 0) or antiJailActiveFlag then
 						updateJailButtonText()
 					end
 					task.wait(0.5)

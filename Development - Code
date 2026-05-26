@@ -4240,12 +4240,12 @@ GUI.Changed:Once(function()
 							if reason ~= "" and type(reason) == "string" and string.gsub(reason, " ", "") ~= "" then
 								print("[JailDebug] Firing with reason")
 								pcall(function()
-									startVoteRemote:FireServer(reason, foundPlayer)
+									startVoteRemote:FireServer(foundPlayer,reason)
 								end)
 							else
 								print("[JailDebug] Firing without reason")
 								pcall(function()
-									startVoteRemote:FireServer(foundPlayer)
+									startVoteRemote:FireServer(foundPlayer,reason)
 								end)
 							end
 						end

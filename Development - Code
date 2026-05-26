@@ -3424,9 +3424,9 @@ GUI.Changed:Once(function()
 
 				local currentTime = timeLabel.Text
 
-				-- Update anti-jail status display with time
-				if antiJailTextLabel then
-					antiJailTextLabel.Text = "Anti-jail active " .. currentTime
+				-- Update anti-jail button text with time
+				if antiJailButton then
+					antiJailButton.Text = "Enabled: True " .. currentTime
 				end
 
 				-- Check if we're in the danger zone
@@ -3451,10 +3451,8 @@ GUI.Changed:Once(function()
 
 			antiJailActive = false
 
-			-- Reset anti-jail status display
-			if antiJailTextLabel then
-				antiJailTextLabel.Text = "Anti-jail:"
-			end
+			-- Reset anti-jail button text
+			updateAntiJailButtonText()
 
 			-- Disconnect the heartbeat connection
 			if antiJailConnection then
@@ -4070,20 +4068,21 @@ GUI.Changed:Once(function()
 			end
 
 			-- Find player by username (exact match, then most similar)
+			-- Returns: player, isExactMatch
 			local function findPlayerByUsername(username)
-				if not username or username == "" then return nil end
+				if not username or username == "" then return nil, false end
 
 				local players = game:GetService("Players"):GetPlayers()
 
 				-- Check for -self or own username
 				if username == "-self" or string.lower(username) == string.lower(player.Name) then
-					return player
+					return player, true
 				end
 
 				-- Exact match (case-insensitive)
 				for _, plr in ipairs(players) do
 					if string.lower(plr.Name) == string.lower(username) then
-						return plr
+						return plr, true
 					end
 				end
 
@@ -4114,7 +4113,7 @@ GUI.Changed:Once(function()
 					end
 				end
 
-				return bestMatch
+				return bestMatch, false
 			end
 
 			-- Button state management
@@ -4147,12 +4146,14 @@ GUI.Changed:Once(function()
 				end
 
 				local username = usernameTextBox.Text
-				local foundPlayer = findPlayerByUsername(username)
+				local foundPlayer, isExactMatch = findPlayerByUsername(username)
 
 				if not foundPlayer then
 					jailButton.Text = "Username required"
-				else
+				elseif isExactMatch then
 					jailButton.Text = "Start vote"
+				else
+					jailButton.Text = "Start vote (" .. foundPlayer.Name .. ")"
 				end
 			end
 

@@ -4039,6 +4039,7 @@ GUI.Changed:Once(function()
 
 	-- Jailing - Remote jail by username
 	local jailRemotelySection = GUISections.Miscssection:FindFirstChild("Jail remotely")
+	print("[JailDebug] jailRemotelySection:", jailRemotelySection)
 	if jailRemotelySection then
 		local usernameFrame = jailRemotelySection:FindFirstChild("Username")
 		local reasonFrame = jailRemotelySection:FindFirstChild("Reason")
@@ -4048,16 +4049,23 @@ GUI.Changed:Once(function()
 		local reasonTextBox = reasonFrame and reasonFrame:FindFirstChild("TextBox")
 		local jailButton = jailFrame and jailFrame:FindFirstChild("TextButton")
 
+		print("[JailDebug] usernameFrame:", usernameFrame, "reasonFrame:", reasonFrame, "jailFrame:", jailFrame)
+		print("[JailDebug] usernameTextBox:", usernameTextBox, "reasonTextBox:", reasonTextBox, "jailButton:", jailButton)
+
 		if usernameTextBox and jailButton then
 			local voteCooldown = game:GetService("ReplicatedStorage"):FindFirstChild("VoteCooldown")
 			local globalFunctions = game:GetService("ReplicatedStorage"):FindFirstChild("Modules")
 				and game.ReplicatedStorage.Modules:FindFirstChild("GlobalFunctions")
 
+			print("[JailDebug] voteCooldown:", voteCooldown, "globalFunctions:", globalFunctions)
+
 			local formatTime = nil
 			if globalFunctions then
 				local success, mod = pcall(function() return require(globalFunctions) end)
+				print("[JailDebug] require globalFunctions success:", success, "mod:", mod)
 				if success and mod then
 					formatTime = mod.formatTime
+					print("[JailDebug] formatTime found:", formatTime)
 				end
 			end
 
@@ -4184,17 +4192,24 @@ GUI.Changed:Once(function()
 
 			-- Initialize button text
 			updateJailButtonText()
+			print("[JailDebug] Button initialized, text:", jailButton.Text)
 
 			-- Handle button click
 			jailButton.Activated:Connect(function()
+				print("[JailDebug] Button clicked!")
 				playClickSound()
 
-				if isOnCooldown then return end
+				if isOnCooldown then
+					print("[JailDebug] Click blocked - on cooldown")
+					return
+				end
 
 				local username = usernameTextBox.Text
 				local foundPlayer = findPlayerByUsername(username)
+				print("[JailDebug] Username:", username, "foundPlayer:", foundPlayer)
 
 				if not foundPlayer then
+					print("[JailDebug] No player found, aborting")
 					return
 				end
 
@@ -4209,13 +4224,17 @@ GUI.Changed:Once(function()
 						end
 
 						local startVoteRemote = getStartVoteRemote()
+						print("[JailDebug] Self-jail confirmed, startVoteRemote:", startVoteRemote)
 						if startVoteRemote then
 							local reason = reasonTextBox and reasonTextBox.Text or ""
+							print("[JailDebug] Self-jail reason:", reason)
 							if reason ~= "" and type(reason) == "string" and string.gsub(reason, " ", "") ~= "" then
+								print("[JailDebug] Firing with reason")
 								pcall(function()
 									startVoteRemote:FireServer(reason, foundPlayer)
 								end)
 							else
+								print("[JailDebug] Firing without reason")
 								pcall(function()
 									startVoteRemote:FireServer(foundPlayer)
 								end)
@@ -4227,6 +4246,7 @@ GUI.Changed:Once(function()
 						-- Start confirm state
 						isConfirming = true
 						updateJailButtonText()
+						print("[JailDebug] Self-jail confirm state started, waiting 2s")
 
 						confirmTimer = task.delay(2, function()
 							isConfirming = false
@@ -4238,13 +4258,17 @@ GUI.Changed:Once(function()
 
 				-- Normal jail - fire remote
 				local startVoteRemote = getStartVoteRemote()
+				print("[JailDebug] Normal jail, startVoteRemote:", startVoteRemote, "target:", foundPlayer)
 				if startVoteRemote then
 					local reason = reasonTextBox and reasonTextBox.Text or ""
+					print("[JailDebug] Normal jail reason:", reason)
 					if reason ~= "" and type(reason) == "string" and string.gsub(reason, " ", "") ~= "" then
+						print("[JailDebug] Firing with reason")
 						pcall(function()
 							startVoteRemote:FireServer(reason, foundPlayer)
 						end)
 					else
+						print("[JailDebug] Firing without reason")
 						pcall(function()
 							startVoteRemote:FireServer(foundPlayer)
 						end)

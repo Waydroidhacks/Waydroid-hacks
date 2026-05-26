@@ -4045,9 +4045,9 @@ GUI.Changed:Once(function()
 		local reasonFrame = jailRemotelySection:FindFirstChild("Reason")
 		local jailFrame = jailRemotelySection:FindFirstChild("Jail")
 
-		local usernameTextBox = usernameFrame and usernameFrame:FindFirstChild("TextBox")
-		local reasonTextBox = reasonFrame and reasonFrame:FindFirstChild("TextBox")
-		local jailButton = jailFrame and jailFrame:FindFirstChild("TextButton")
+		local usernameTextBox = usernameFrame and (usernameFrame:FindFirstChildOfClass("TextBox") or usernameFrame:WaitForChild("TextBox", 5))
+		local reasonTextBox = reasonFrame and (reasonFrame:FindFirstChildOfClass("TextBox") or reasonFrame:WaitForChild("TextBox", 5))
+		local jailButton = jailFrame and (jailFrame:FindFirstChildOfClass("TextButton") or jailFrame:WaitForChild("TextButton", 5))
 
 		print("[JailDebug] usernameFrame:", usernameFrame, "reasonFrame:", reasonFrame, "jailFrame:", jailFrame)
 		print("[JailDebug] usernameTextBox:", usernameTextBox, "reasonTextBox:", reasonTextBox, "jailButton:", jailButton)

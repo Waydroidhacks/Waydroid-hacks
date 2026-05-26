@@ -4241,12 +4241,12 @@ GUI.Changed:Once(function()
 								print("[JailDebug] Firing with reason")
 								print(reason)
 								pcall(function()
-									startVoteRemote:FireServer(foundPlayer,reason)
+									startVoteRemote:FireServer(foundPlayer,reasonTextBox.Text)
 								end)
 							else
 								print("[JailDebug] Firing without reason")
 								pcall(function()
-									startVoteRemote:FireServer(foundPlayer)
+									startVoteRemote:FireServer(foundPlayer,reasonTextBox.Text)
 								end)
 							end
 						end

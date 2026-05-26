@@ -4235,13 +4235,12 @@ GUI.Changed:Once(function()
 						local startVoteRemote = getStartVoteRemote()
 						print("[JailDebug] Self-jail confirmed, startVoteRemote:", startVoteRemote)
 						if startVoteRemote then
-							local reason = reasonTextBox and reasonTextBox.Text or ""
-							print("[JailDebug] Self-jail reason:", reason)
-							if reason ~= "" and type(reason) == "string" and string.gsub(reason, " ", "") ~= "" then
+							local reason = tostring(reasonTextBox and reasonTextBox.Text or "")
+							print("[JailDebug] Self-jail reason:", reason, "len:", #reason)
+							if reason:gsub("%s", "") ~= "" then
 								print("[JailDebug] Firing with reason")
-								print(reason)
 								pcall(function()
-									startVoteRemote:FireServer(foundPlayer,reason)
+									startVoteRemote:FireServer(foundPlayer, reason)
 								end)
 							else
 								print("[JailDebug] Firing without reason")
@@ -4270,12 +4269,12 @@ GUI.Changed:Once(function()
 				local startVoteRemote = getStartVoteRemote()
 				print("[JailDebug] Normal jail, startVoteRemote:", startVoteRemote, "target:", foundPlayer)
 				if startVoteRemote then
-					local reason = reasonTextBox and reasonTextBox.Text or ""
-					print("[JailDebug] Normal jail reason:", reason)
-					if reason ~= "" and type(reason) == "string" and string.gsub(reason, " ", "") ~= "" then
+					local reason = tostring(reasonTextBox and reasonTextBox.Text or "")
+					print("[JailDebug] Normal jail reason:", reason, "len:", #reason)
+					if reason:gsub("%s", "") ~= "" then
 						print("[JailDebug] Firing with reason")
 						pcall(function()
-							startVoteRemote:FireServer(reason, foundPlayer)
+							startVoteRemote:FireServer(foundPlayer, reason)
 						end)
 					else
 						print("[JailDebug] Firing without reason")

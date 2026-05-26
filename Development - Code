@@ -3425,7 +3425,7 @@ GUI.Changed:Once(function()
 				local currentTime = timeLabel.Text
 
 				-- Store current time for the jail remotely section
-				antiJailCurrentTime = currentTime
+				antiJailCurrentTime = tostring(currentTime)
 
 				-- Check if we're in the danger zone
 				if dangerTimes[currentTime] then
@@ -4159,7 +4159,7 @@ GUI.Changed:Once(function()
 
 				-- Append anti-jail time if active
 				if antiJailActiveFlag and antiJailCurrentTime ~= "" then
-					jailButton.Text = baseText .. " " .. antiJailCurrentTime
+					jailButton.Text = baseText .. " " .. tostring(antiJailCurrentTime)
 				else
 					jailButton.Text = baseText
 				end
@@ -4239,13 +4239,14 @@ GUI.Changed:Once(function()
 							print("[JailDebug] Self-jail reason:", reason)
 							if reason ~= "" and type(reason) == "string" and string.gsub(reason, " ", "") ~= "" then
 								print("[JailDebug] Firing with reason")
+								print(reason)
 								pcall(function()
 									startVoteRemote:FireServer(foundPlayer,reason)
 								end)
 							else
 								print("[JailDebug] Firing without reason")
 								pcall(function()
-									startVoteRemote:FireServer(foundPlayer,reason)
+									startVoteRemote:FireServer(foundPlayer)
 								end)
 							end
 						end

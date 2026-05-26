@@ -4249,7 +4249,9 @@ GUI.Changed:Once(function()
 								end)
 							end
 						end
-						updateJailButtonText()
+						-- Clear inputs to prevent re-triggering self-jail
+						usernameTextBox.Text = ""
+						if reasonTextBox then reasonTextBox.Text = "" end
 						return
 					else
 						-- Start confirm state

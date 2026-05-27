@@ -2645,6 +2645,8 @@ G2L["118"]["Text"] = [[Enabled: False]];
 
 -- StarterGui.AdminGUI client.Container.Actionsection.Misc
 G2L["119"] = Instance.new("Frame", G2L["c"]);
+G2L["119"]["Visible"] = false;
+G2L["119"]["Interactable"] = false;
 G2L["119"]["BorderSizePixel"] = 0;
 G2L["119"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
 G2L["119"]["Size"] = UDim2.new(1, 0, 1, 0);
@@ -3062,9 +3064,8 @@ G2L["143"] = Instance.new("UIStroke", G2L["142"]);
 
 
 
--- StarterGui.AdminGUI client.Container.Actionsection.Misc.Jail remotely.Username.TextButton
+-- StarterGui.AdminGUI client.Container.Actionsection.Misc.Jail remotely.Username.TextBox
 G2L["144"] = Instance.new("TextBox", G2L["142"]);
-G2L["144"]["Name"] = [[TextButton]];
 G2L["144"]["BorderSizePixel"] = 0;
 G2L["144"]["TextWrapped"] = true;
 G2L["144"]["TextSize"] = 14;
@@ -3072,6 +3073,7 @@ G2L["144"]["TextColor3"] = Color3.fromRGB(18, 18, 18);
 G2L["144"]["TextScaled"] = true;
 G2L["144"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
 G2L["144"]["FontFace"] = Font.new([[rbxasset://fonts/families/HighwayGothic.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["144"]["ClearTextOnFocus"] = false;
 G2L["144"]["PlaceholderText"] = [[Type a username here..]];
 G2L["144"]["Size"] = UDim2.new(1, 0, 1, 0);
 G2L["144"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
@@ -3100,9 +3102,8 @@ G2L["147"] = Instance.new("UIStroke", G2L["146"]);
 
 
 
--- StarterGui.AdminGUI client.Container.Actionsection.Misc.Jail remotely.Reason.TextButton
+-- StarterGui.AdminGUI client.Container.Actionsection.Misc.Jail remotely.Reason.TextBox
 G2L["148"] = Instance.new("TextBox", G2L["146"]);
-G2L["148"]["Name"] = [[TextButton]];
 G2L["148"]["BorderSizePixel"] = 0;
 G2L["148"]["TextWrapped"] = true;
 G2L["148"]["TextSize"] = 14;
@@ -3110,6 +3111,7 @@ G2L["148"]["TextColor3"] = Color3.fromRGB(18, 18, 18);
 G2L["148"]["TextScaled"] = true;
 G2L["148"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
 G2L["148"]["FontFace"] = Font.new([[rbxasset://fonts/families/HighwayGothic.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["148"]["ClearTextOnFocus"] = false;
 G2L["148"]["PlaceholderText"] = [[Type a reason here..]];
 G2L["148"]["Size"] = UDim2.new(1, 0, 1, 0);
 G2L["148"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
@@ -3559,8 +3561,6 @@ G2L["176"]["Value"] = true;
 
 -- StarterGui.AdminGUI client.Container.Actionsection.No selection
 G2L["177"] = Instance.new("Frame", G2L["c"]);
-G2L["177"]["Visible"] = false;
-G2L["177"]["Interactable"] = false;
 G2L["177"]["BorderSizePixel"] = 0;
 G2L["177"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
 G2L["177"]["Size"] = UDim2.new(1, 0, 1, 0);
@@ -4706,172 +4706,177 @@ G2L["1ee"] = Instance.new("UIStroke", G2L["1ab"]);
 G2L["1ee"]["Thickness"] = 2;
 
 
--- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist
-G2L["1ef"] = Instance.new("Frame", G2L["1aa"]);
-G2L["1ef"]["Visible"] = false;
-G2L["1ef"]["Interactable"] = false;
-G2L["1ef"]["ZIndex"] = 10;
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Gunoptions.Extra configuration
+G2L["1ef"] = Instance.new("Frame", G2L["1ab"]);
 G2L["1ef"]["BorderSizePixel"] = 0;
-G2L["1ef"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["1ef"]["Size"] = UDim2.new(1, 0, 1, 0);
+G2L["1ef"]["BackgroundColor3"] = Color3.fromRGB(56, 111, 0);
+G2L["1ef"]["Size"] = UDim2.new(0.50727, 0, 0.18548, 0);
+G2L["1ef"]["Position"] = UDim2.new(0.491, 0, 0.55351, 0);
 G2L["1ef"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["1ef"]["Name"] = [[Whitelist]];
-G2L["1ef"]["BackgroundTransparency"] = 1;
+G2L["1ef"]["Name"] = [[Extra configuration]];
+G2L["1ef"]["BackgroundTransparency"] = 0.5;
 
 
--- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist.Search
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Gunoptions.Extra configuration.Specifications:
 G2L["1f0"] = Instance.new("Frame", G2L["1ef"]);
-G2L["1f0"]["ZIndex"] = 0;
 G2L["1f0"]["BorderSizePixel"] = 0;
 G2L["1f0"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["1f0"]["Size"] = UDim2.new(0.99872, 0, 0.19681, 0);
-G2L["1f0"]["Position"] = UDim2.new(0, 0, 0, 0);
+G2L["1f0"]["Size"] = UDim2.new(0.35821, 0, 1, 0);
+G2L["1f0"]["Position"] = UDim2.new(0.64179, 0, 0, 0);
 G2L["1f0"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["1f0"]["Name"] = [[Search]];
+G2L["1f0"]["Name"] = [[Specifications:]];
 G2L["1f0"]["BackgroundTransparency"] = 1;
 
 
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Gunoptions.Extra configuration.Specifications:.UIStroke
+G2L["1f1"] = Instance.new("UIStroke", G2L["1f0"]);
+
+
+
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Gunoptions.Extra configuration.Specifications:.Enabled
+G2L["1f2"] = Instance.new("BoolValue", G2L["1f0"]);
+G2L["1f2"]["Name"] = [[Enabled]];
+
+
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Gunoptions.Extra configuration.Specifications:.TextButton
+G2L["1f3"] = Instance.new("TextButton", G2L["1f0"]);
+G2L["1f3"]["TextWrapped"] = true;
+G2L["1f3"]["BorderSizePixel"] = 0;
+G2L["1f3"]["TextSize"] = 14;
+G2L["1f3"]["TextScaled"] = true;
+G2L["1f3"]["TextColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["1f3"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["1f3"]["FontFace"] = Font.new([[rbxasset://fonts/families/HighwayGothic.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["1f3"]["BackgroundTransparency"] = 1;
+G2L["1f3"]["Size"] = UDim2.new(1, 0, 1, 0);
+G2L["1f3"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["1f3"]["Text"] = [[Specifications: False]];
+
+
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Gunoptions.Extra configuration.Explanation
+G2L["1f4"] = Instance.new("Frame", G2L["1ef"]);
+G2L["1f4"]["BorderSizePixel"] = 0;
+G2L["1f4"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["1f4"]["Size"] = UDim2.new(0.32957, 0, 1.00211, 0);
+G2L["1f4"]["Position"] = UDim2.new(0, 0, -0.00211, 0);
+G2L["1f4"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["1f4"]["Name"] = [[Explanation]];
+G2L["1f4"]["BackgroundTransparency"] = 1;
+
+
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Gunoptions.Extra configuration.Explanation.UIStroke
+G2L["1f5"] = Instance.new("UIStroke", G2L["1f4"]);
+
+
+
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Gunoptions.Extra configuration.Explanation.TextLabel
+G2L["1f6"] = Instance.new("TextLabel", G2L["1f4"]);
+G2L["1f6"]["TextWrapped"] = true;
+G2L["1f6"]["BorderSizePixel"] = 0;
+G2L["1f6"]["TextSize"] = 14;
+G2L["1f6"]["TextScaled"] = true;
+G2L["1f6"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["1f6"]["FontFace"] = Font.new([[rbxasset://fonts/families/HighwayGothic.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["1f6"]["TextColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["1f6"]["BackgroundTransparency"] = 1;
+G2L["1f6"]["Size"] = UDim2.new(1, 0, 1, 0);
+G2L["1f6"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["1f6"]["Text"] = [[Optional extra specifications for kill all:]];
+
+
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Gunoptions.Extra configuration.Specification textbox
+G2L["1f7"] = Instance.new("Frame", G2L["1ef"]);
+G2L["1f7"]["BorderSizePixel"] = 0;
+G2L["1f7"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["1f7"]["Size"] = UDim2.new(0.31222, 0, 0.99476, 0);
+G2L["1f7"]["Position"] = UDim2.new(0.32957, 0, 0.00524, 0);
+G2L["1f7"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["1f7"]["Name"] = [[Specification textbox]];
+G2L["1f7"]["BackgroundTransparency"] = 1;
+
+
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Gunoptions.Extra configuration.Specification textbox.UIStroke
+G2L["1f8"] = Instance.new("UIStroke", G2L["1f7"]);
+
+
+
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Gunoptions.Extra configuration.Specification textbox.Isempty
+G2L["1f9"] = Instance.new("BoolValue", G2L["1f7"]);
+G2L["1f9"]["Name"] = [[Isempty]];
+G2L["1f9"]["Value"] = true;
+
+
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Gunoptions.Extra configuration.Specification textbox.TextButton
+G2L["1fa"] = Instance.new("TextBox", G2L["1f7"]);
+G2L["1fa"]["Name"] = [[TextButton]];
+G2L["1fa"]["PlaceholderColor3"] = Color3.fromRGB(64, 64, 64);
+G2L["1fa"]["BorderSizePixel"] = 0;
+G2L["1fa"]["TextWrapped"] = true;
+G2L["1fa"]["TextSize"] = 14;
+G2L["1fa"]["TextColor3"] = Color3.fromRGB(18, 18, 18);
+G2L["1fa"]["TextScaled"] = true;
+G2L["1fa"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["1fa"]["FontFace"] = Font.new([[rbxasset://fonts/families/HighwayGothic.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["1fa"]["PlaceholderText"] = [[Type extra specifications here..]];
+G2L["1fa"]["Size"] = UDim2.new(1, 0, 1, 0);
+G2L["1fa"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["1fa"]["Text"] = [[]];
+G2L["1fa"]["BackgroundTransparency"] = 1;
+
+
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist
+G2L["1fb"] = Instance.new("Frame", G2L["1aa"]);
+G2L["1fb"]["Visible"] = false;
+G2L["1fb"]["Interactable"] = false;
+G2L["1fb"]["ZIndex"] = 10;
+G2L["1fb"]["BorderSizePixel"] = 0;
+G2L["1fb"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["1fb"]["Size"] = UDim2.new(1, 0, 1, 0);
+G2L["1fb"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["1fb"]["Name"] = [[Whitelist]];
+G2L["1fb"]["BackgroundTransparency"] = 1;
+
+
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist.Search
+G2L["1fc"] = Instance.new("Frame", G2L["1fb"]);
+G2L["1fc"]["ZIndex"] = 0;
+G2L["1fc"]["BorderSizePixel"] = 0;
+G2L["1fc"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["1fc"]["Size"] = UDim2.new(0.99872, 0, 0.19681, 0);
+G2L["1fc"]["Position"] = UDim2.new(0, 0, 0, 0);
+G2L["1fc"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["1fc"]["Name"] = [[Search]];
+G2L["1fc"]["BackgroundTransparency"] = 1;
+
+
 -- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist.Search.TextBox
-G2L["1f1"] = Instance.new("TextBox", G2L["1f0"]);
-G2L["1f1"]["BorderSizePixel"] = 0;
-G2L["1f1"]["TextWrapped"] = true;
-G2L["1f1"]["TextSize"] = 14;
-G2L["1f1"]["TextColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["1f1"]["TextScaled"] = true;
-G2L["1f1"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["1f1"]["FontFace"] = Font.new([[rbxasset://fonts/families/HighwayGothic.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["1f1"]["PlaceholderText"] = [[Search players here..]];
-G2L["1f1"]["Size"] = UDim2.new(1, 0, 1, 0);
-G2L["1f1"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["1f1"]["Text"] = [[]];
-G2L["1f1"]["BackgroundTransparency"] = 1;
+G2L["1fd"] = Instance.new("TextBox", G2L["1fc"]);
+G2L["1fd"]["BorderSizePixel"] = 0;
+G2L["1fd"]["TextWrapped"] = true;
+G2L["1fd"]["TextSize"] = 14;
+G2L["1fd"]["TextColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["1fd"]["TextScaled"] = true;
+G2L["1fd"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["1fd"]["FontFace"] = Font.new([[rbxasset://fonts/families/HighwayGothic.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["1fd"]["PlaceholderText"] = [[Search players here..]];
+G2L["1fd"]["Size"] = UDim2.new(1, 0, 1, 0);
+G2L["1fd"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["1fd"]["Text"] = [[]];
+G2L["1fd"]["BackgroundTransparency"] = 1;
 
 
 -- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist.Search.TextBox.UIStroke
-G2L["1f2"] = Instance.new("UIStroke", G2L["1f1"]);
+G2L["1fe"] = Instance.new("UIStroke", G2L["1fd"]);
 
 
 
 -- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist.Search.UIStroke
-G2L["1f3"] = Instance.new("UIStroke", G2L["1f0"]);
-G2L["1f3"]["Thickness"] = 2;
+G2L["1ff"] = Instance.new("UIStroke", G2L["1fc"]);
+G2L["1ff"]["Thickness"] = 2;
 
 
 -- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist.ScrollingFrame
-G2L["1f4"] = Instance.new("ScrollingFrame", G2L["1ef"]);
-G2L["1f4"]["Active"] = true;
-G2L["1f4"]["BorderSizePixel"] = 0;
-G2L["1f4"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["1f4"]["Size"] = UDim2.new(1, 0, 0.80319, 0);
-G2L["1f4"]["ScrollBarImageColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["1f4"]["Position"] = UDim2.new(0, 0, 0.19681, 0);
-G2L["1f4"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["1f4"]["BackgroundTransparency"] = 1;
-
-
--- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist.ScrollingFrame.Player
-G2L["1f5"] = Instance.new("Frame", G2L["1f4"]);
-G2L["1f5"]["BorderSizePixel"] = 0;
-G2L["1f5"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["1f5"]["Size"] = UDim2.new(0.5, 0, 0.095, 0);
-G2L["1f5"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["1f5"]["Name"] = [[Player]];
-G2L["1f5"]["BackgroundTransparency"] = 1;
-
-
--- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist.ScrollingFrame.Player.[Display name,Username]
-G2L["1f6"] = Instance.new("Frame", G2L["1f5"]);
-G2L["1f6"]["BorderSizePixel"] = 0;
-G2L["1f6"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["1f6"]["Size"] = UDim2.new(0.5, 0, 1, 0);
-G2L["1f6"]["Position"] = UDim2.new(0, 0, 0, 0);
-G2L["1f6"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["1f6"]["Name"] = `[Display name,Username]`;
-G2L["1f6"]["BackgroundTransparency"] = 1;
-
-
--- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist.ScrollingFrame.Player.[Display name,Username].TextLabel
-G2L["1f7"] = Instance.new("TextLabel", G2L["1f6"]);
-G2L["1f7"]["TextWrapped"] = true;
-G2L["1f7"]["BorderSizePixel"] = 0;
-G2L["1f7"]["TextSize"] = 14;
-G2L["1f7"]["TextScaled"] = true;
-G2L["1f7"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["1f7"]["FontFace"] = Font.new([[rbxasset://fonts/families/HighwayGothic.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["1f7"]["TextColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["1f7"]["BackgroundTransparency"] = 1;
-G2L["1f7"]["Size"] = UDim2.new(1, 0, 1, 0);
-G2L["1f7"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["1f7"]["Text"] = [[Display name (@Username):]];
-
-
--- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist.ScrollingFrame.Player.[Display name,Username].UIStroke
-G2L["1f8"] = Instance.new("UIStroke", G2L["1f6"]);
-
-
-
--- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist.ScrollingFrame.Player.UIStroke
-G2L["1f9"] = Instance.new("UIStroke", G2L["1f5"]);
-G2L["1f9"]["Thickness"] = 2;
-
-
--- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist.ScrollingFrame.Player.Whitelisted
-G2L["1fa"] = Instance.new("Frame", G2L["1f5"]);
-G2L["1fa"]["BorderSizePixel"] = 0;
-G2L["1fa"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["1fa"]["Size"] = UDim2.new(0.5, 0, 1, 0);
-G2L["1fa"]["Position"] = UDim2.new(0.5, 0, 0, 0);
-G2L["1fa"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["1fa"]["Name"] = [[Whitelisted]];
-G2L["1fa"]["BackgroundTransparency"] = 1;
-
-
--- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist.ScrollingFrame.Player.Whitelisted.UIStroke
-G2L["1fb"] = Instance.new("UIStroke", G2L["1fa"]);
-
-
-
--- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist.ScrollingFrame.Player.Whitelisted.TextButton
-G2L["1fc"] = Instance.new("TextButton", G2L["1fa"]);
-G2L["1fc"]["TextWrapped"] = true;
-G2L["1fc"]["BorderSizePixel"] = 0;
-G2L["1fc"]["TextSize"] = 14;
-G2L["1fc"]["TextScaled"] = true;
-G2L["1fc"]["TextColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["1fc"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["1fc"]["FontFace"] = Font.new([[rbxasset://fonts/families/HighwayGothic.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["1fc"]["BackgroundTransparency"] = 1;
-G2L["1fc"]["Size"] = UDim2.new(1, 0, 1, 0);
-G2L["1fc"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["1fc"]["Text"] = [[Whitelisted: False]];
-
-
--- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist.ScrollingFrame.UIListLayout
-G2L["1fd"] = Instance.new("UIListLayout", G2L["1f4"]);
-G2L["1fd"]["Wraps"] = true;
-G2L["1fd"]["SortOrder"] = Enum.SortOrder.LayoutOrder;
-G2L["1fd"]["FillDirection"] = Enum.FillDirection.Horizontal;
-
-
--- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist.ScrollingFrame.UIStroke
-G2L["1fe"] = Instance.new("UIStroke", G2L["1f4"]);
-G2L["1fe"]["Thickness"] = 2;
-
-
--- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist
-G2L["1ff"] = Instance.new("Frame", G2L["1aa"]);
-G2L["1ff"]["Visible"] = false;
-G2L["1ff"]["Interactable"] = false;
-G2L["1ff"]["BorderSizePixel"] = 0;
-G2L["1ff"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["1ff"]["Size"] = UDim2.new(1, 0, 1, 0);
-G2L["1ff"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["1ff"]["Name"] = [[Blacklist]];
-G2L["1ff"]["BackgroundTransparency"] = 1;
-
-
--- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.ScrollingFrame
-G2L["200"] = Instance.new("ScrollingFrame", G2L["1ff"]);
+G2L["200"] = Instance.new("ScrollingFrame", G2L["1fb"]);
 G2L["200"]["Active"] = true;
 G2L["200"]["BorderSizePixel"] = 0;
 G2L["200"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
@@ -4882,7 +4887,7 @@ G2L["200"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
 G2L["200"]["BackgroundTransparency"] = 1;
 
 
--- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.ScrollingFrame.Player
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist.ScrollingFrame.Player
 G2L["201"] = Instance.new("Frame", G2L["200"]);
 G2L["201"]["BorderSizePixel"] = 0;
 G2L["201"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
@@ -4892,7 +4897,7 @@ G2L["201"]["Name"] = [[Player]];
 G2L["201"]["BackgroundTransparency"] = 1;
 
 
--- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.ScrollingFrame.Player.[Display name,Username]
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist.ScrollingFrame.Player.[Display name,Username]
 G2L["202"] = Instance.new("Frame", G2L["201"]);
 G2L["202"]["BorderSizePixel"] = 0;
 G2L["202"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
@@ -4903,7 +4908,7 @@ G2L["202"]["Name"] = `[Display name,Username]`;
 G2L["202"]["BackgroundTransparency"] = 1;
 
 
--- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.ScrollingFrame.Player.[Display name,Username].TextLabel
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist.ScrollingFrame.Player.[Display name,Username].TextLabel
 G2L["203"] = Instance.new("TextLabel", G2L["202"]);
 G2L["203"]["TextWrapped"] = true;
 G2L["203"]["BorderSizePixel"] = 0;
@@ -4918,33 +4923,33 @@ G2L["203"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
 G2L["203"]["Text"] = [[Display name (@Username):]];
 
 
--- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.ScrollingFrame.Player.[Display name,Username].UIStroke
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist.ScrollingFrame.Player.[Display name,Username].UIStroke
 G2L["204"] = Instance.new("UIStroke", G2L["202"]);
 
 
 
--- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.ScrollingFrame.Player.UIStroke
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist.ScrollingFrame.Player.UIStroke
 G2L["205"] = Instance.new("UIStroke", G2L["201"]);
 G2L["205"]["Thickness"] = 2;
 
 
--- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.ScrollingFrame.Player.Blacklisted
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist.ScrollingFrame.Player.Whitelisted
 G2L["206"] = Instance.new("Frame", G2L["201"]);
 G2L["206"]["BorderSizePixel"] = 0;
 G2L["206"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
 G2L["206"]["Size"] = UDim2.new(0.5, 0, 1, 0);
 G2L["206"]["Position"] = UDim2.new(0.5, 0, 0, 0);
 G2L["206"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["206"]["Name"] = [[Blacklisted]];
+G2L["206"]["Name"] = [[Whitelisted]];
 G2L["206"]["BackgroundTransparency"] = 1;
 
 
--- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.ScrollingFrame.Player.Blacklisted.UIStroke
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist.ScrollingFrame.Player.Whitelisted.UIStroke
 G2L["207"] = Instance.new("UIStroke", G2L["206"]);
 
 
 
--- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.ScrollingFrame.Player.Blacklisted.TextButton
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist.ScrollingFrame.Player.Whitelisted.TextButton
 G2L["208"] = Instance.new("TextButton", G2L["206"]);
 G2L["208"]["TextWrapped"] = true;
 G2L["208"]["BorderSizePixel"] = 0;
@@ -4956,241 +4961,354 @@ G2L["208"]["FontFace"] = Font.new([[rbxasset://fonts/families/HighwayGothic.json
 G2L["208"]["BackgroundTransparency"] = 1;
 G2L["208"]["Size"] = UDim2.new(1, 0, 1, 0);
 G2L["208"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["208"]["Text"] = [[Blacklisted: False]];
+G2L["208"]["Text"] = [[Whitelisted: False]];
 
 
--- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.ScrollingFrame.UIListLayout
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist.ScrollingFrame.UIListLayout
 G2L["209"] = Instance.new("UIListLayout", G2L["200"]);
 G2L["209"]["Wraps"] = true;
 G2L["209"]["SortOrder"] = Enum.SortOrder.LayoutOrder;
 G2L["209"]["FillDirection"] = Enum.FillDirection.Horizontal;
 
 
--- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.ScrollingFrame.UIStroke
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Whitelist.ScrollingFrame.UIStroke
 G2L["20a"] = Instance.new("UIStroke", G2L["200"]);
 G2L["20a"]["Thickness"] = 2;
 
 
--- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.Search
-G2L["20b"] = Instance.new("Frame", G2L["1ff"]);
-G2L["20b"]["ZIndex"] = 0;
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist
+G2L["20b"] = Instance.new("Frame", G2L["1aa"]);
+G2L["20b"]["Visible"] = false;
+G2L["20b"]["Interactable"] = false;
 G2L["20b"]["BorderSizePixel"] = 0;
 G2L["20b"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["20b"]["Size"] = UDim2.new(0.99872, 0, 0.19681, 0);
-G2L["20b"]["Position"] = UDim2.new(0, 0, 0, 0);
+G2L["20b"]["Size"] = UDim2.new(1, 0, 1, 0);
 G2L["20b"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["20b"]["Name"] = [[Search]];
+G2L["20b"]["Name"] = [[Blacklist]];
 G2L["20b"]["BackgroundTransparency"] = 1;
 
 
--- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.Search.TextBox
-G2L["20c"] = Instance.new("TextBox", G2L["20b"]);
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.ScrollingFrame
+G2L["20c"] = Instance.new("ScrollingFrame", G2L["20b"]);
+G2L["20c"]["Active"] = true;
 G2L["20c"]["BorderSizePixel"] = 0;
-G2L["20c"]["TextWrapped"] = true;
-G2L["20c"]["TextSize"] = 14;
-G2L["20c"]["TextColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["20c"]["TextScaled"] = true;
 G2L["20c"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["20c"]["FontFace"] = Font.new([[rbxasset://fonts/families/HighwayGothic.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["20c"]["PlaceholderText"] = [[Search players here..]];
-G2L["20c"]["Size"] = UDim2.new(1, 0, 1, 0);
+G2L["20c"]["Size"] = UDim2.new(1, 0, 0.80319, 0);
+G2L["20c"]["ScrollBarImageColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["20c"]["Position"] = UDim2.new(0, 0, 0.19681, 0);
 G2L["20c"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["20c"]["Text"] = [[]];
 G2L["20c"]["BackgroundTransparency"] = 1;
 
 
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.ScrollingFrame.Player
+G2L["20d"] = Instance.new("Frame", G2L["20c"]);
+G2L["20d"]["BorderSizePixel"] = 0;
+G2L["20d"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["20d"]["Size"] = UDim2.new(0.5, 0, 0.095, 0);
+G2L["20d"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["20d"]["Name"] = [[Player]];
+G2L["20d"]["BackgroundTransparency"] = 1;
+
+
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.ScrollingFrame.Player.[Display name,Username]
+G2L["20e"] = Instance.new("Frame", G2L["20d"]);
+G2L["20e"]["BorderSizePixel"] = 0;
+G2L["20e"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["20e"]["Size"] = UDim2.new(0.5, 0, 1, 0);
+G2L["20e"]["Position"] = UDim2.new(0, 0, 0, 0);
+G2L["20e"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["20e"]["Name"] = `[Display name,Username]`;
+G2L["20e"]["BackgroundTransparency"] = 1;
+
+
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.ScrollingFrame.Player.[Display name,Username].TextLabel
+G2L["20f"] = Instance.new("TextLabel", G2L["20e"]);
+G2L["20f"]["TextWrapped"] = true;
+G2L["20f"]["BorderSizePixel"] = 0;
+G2L["20f"]["TextSize"] = 14;
+G2L["20f"]["TextScaled"] = true;
+G2L["20f"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["20f"]["FontFace"] = Font.new([[rbxasset://fonts/families/HighwayGothic.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["20f"]["TextColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["20f"]["BackgroundTransparency"] = 1;
+G2L["20f"]["Size"] = UDim2.new(1, 0, 1, 0);
+G2L["20f"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["20f"]["Text"] = [[Display name (@Username):]];
+
+
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.ScrollingFrame.Player.[Display name,Username].UIStroke
+G2L["210"] = Instance.new("UIStroke", G2L["20e"]);
+
+
+
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.ScrollingFrame.Player.UIStroke
+G2L["211"] = Instance.new("UIStroke", G2L["20d"]);
+G2L["211"]["Thickness"] = 2;
+
+
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.ScrollingFrame.Player.Blacklisted
+G2L["212"] = Instance.new("Frame", G2L["20d"]);
+G2L["212"]["BorderSizePixel"] = 0;
+G2L["212"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["212"]["Size"] = UDim2.new(0.5, 0, 1, 0);
+G2L["212"]["Position"] = UDim2.new(0.5, 0, 0, 0);
+G2L["212"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["212"]["Name"] = [[Blacklisted]];
+G2L["212"]["BackgroundTransparency"] = 1;
+
+
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.ScrollingFrame.Player.Blacklisted.UIStroke
+G2L["213"] = Instance.new("UIStroke", G2L["212"]);
+
+
+
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.ScrollingFrame.Player.Blacklisted.TextButton
+G2L["214"] = Instance.new("TextButton", G2L["212"]);
+G2L["214"]["TextWrapped"] = true;
+G2L["214"]["BorderSizePixel"] = 0;
+G2L["214"]["TextSize"] = 14;
+G2L["214"]["TextScaled"] = true;
+G2L["214"]["TextColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["214"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["214"]["FontFace"] = Font.new([[rbxasset://fonts/families/HighwayGothic.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["214"]["BackgroundTransparency"] = 1;
+G2L["214"]["Size"] = UDim2.new(1, 0, 1, 0);
+G2L["214"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["214"]["Text"] = [[Blacklisted: False]];
+
+
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.ScrollingFrame.UIListLayout
+G2L["215"] = Instance.new("UIListLayout", G2L["20c"]);
+G2L["215"]["Wraps"] = true;
+G2L["215"]["SortOrder"] = Enum.SortOrder.LayoutOrder;
+G2L["215"]["FillDirection"] = Enum.FillDirection.Horizontal;
+
+
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.ScrollingFrame.UIStroke
+G2L["216"] = Instance.new("UIStroke", G2L["20c"]);
+G2L["216"]["Thickness"] = 2;
+
+
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.Search
+G2L["217"] = Instance.new("Frame", G2L["20b"]);
+G2L["217"]["ZIndex"] = 0;
+G2L["217"]["BorderSizePixel"] = 0;
+G2L["217"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["217"]["Size"] = UDim2.new(0.99872, 0, 0.19681, 0);
+G2L["217"]["Position"] = UDim2.new(0, 0, 0, 0);
+G2L["217"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["217"]["Name"] = [[Search]];
+G2L["217"]["BackgroundTransparency"] = 1;
+
+
+-- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.Search.TextBox
+G2L["218"] = Instance.new("TextBox", G2L["217"]);
+G2L["218"]["BorderSizePixel"] = 0;
+G2L["218"]["TextWrapped"] = true;
+G2L["218"]["TextSize"] = 14;
+G2L["218"]["TextColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["218"]["TextScaled"] = true;
+G2L["218"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["218"]["FontFace"] = Font.new([[rbxasset://fonts/families/HighwayGothic.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["218"]["PlaceholderText"] = [[Search players here..]];
+G2L["218"]["Size"] = UDim2.new(1, 0, 1, 0);
+G2L["218"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["218"]["Text"] = [[]];
+G2L["218"]["BackgroundTransparency"] = 1;
+
+
 -- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.Search.TextBox.UIStroke
-G2L["20d"] = Instance.new("UIStroke", G2L["20c"]);
+G2L["219"] = Instance.new("UIStroke", G2L["218"]);
 
 
 
 -- StarterGui.AdminGUI client.Laser gun menu.GunMenu.Blacklist.Search.UIStroke
-G2L["20e"] = Instance.new("UIStroke", G2L["20b"]);
-G2L["20e"]["Thickness"] = 2;
+G2L["21a"] = Instance.new("UIStroke", G2L["217"]);
+G2L["21a"]["Thickness"] = 2;
 
 
 -- StarterGui.AdminGUI client.Laser gun menu.SectionSelect
-G2L["20f"] = Instance.new("Frame", G2L["1a1"]);
-G2L["20f"]["BorderSizePixel"] = 0;
-G2L["20f"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["20f"]["Size"] = UDim2.new(1, 0, 0.14286, 0);
-G2L["20f"]["Position"] = UDim2.new(0, 0, 0.85714, 0);
-G2L["20f"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["20f"]["Name"] = [[SectionSelect]];
-G2L["20f"]["BackgroundTransparency"] = 1;
+G2L["21b"] = Instance.new("Frame", G2L["1a1"]);
+G2L["21b"]["BorderSizePixel"] = 0;
+G2L["21b"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["21b"]["Size"] = UDim2.new(1, 0, 0.14286, 0);
+G2L["21b"]["Position"] = UDim2.new(0, 0, 0.85714, 0);
+G2L["21b"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["21b"]["Name"] = [[SectionSelect]];
+G2L["21b"]["BackgroundTransparency"] = 1;
 
 
 -- StarterGui.AdminGUI client.Laser gun menu.SectionSelect.TextLabel
-G2L["210"] = Instance.new("TextLabel", G2L["20f"]);
-G2L["210"]["TextWrapped"] = true;
-G2L["210"]["BorderSizePixel"] = 0;
-G2L["210"]["TextSize"] = 14;
-G2L["210"]["TextScaled"] = true;
-G2L["210"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["210"]["FontFace"] = Font.new([[rbxasset://fonts/families/Ubuntu.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["210"]["TextColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["210"]["BackgroundTransparency"] = 1;
-G2L["210"]["Size"] = UDim2.new(0.48727, 0, 1, 0);
-G2L["210"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["210"]["Text"] = [[WARNING: Enabling too much options at once may glitch you or cause performance issues, must have strong laser gun (red gun) in inventory to use]];
-G2L["210"]["Position"] = UDim2.new(-0, 0, 0, 0);
+G2L["21c"] = Instance.new("TextLabel", G2L["21b"]);
+G2L["21c"]["TextWrapped"] = true;
+G2L["21c"]["BorderSizePixel"] = 0;
+G2L["21c"]["TextSize"] = 14;
+G2L["21c"]["TextScaled"] = true;
+G2L["21c"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["21c"]["FontFace"] = Font.new([[rbxasset://fonts/families/Ubuntu.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["21c"]["TextColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["21c"]["BackgroundTransparency"] = 1;
+G2L["21c"]["Size"] = UDim2.new(0.48727, 0, 1, 0);
+G2L["21c"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["21c"]["Text"] = [[WARNING: Enabling too much options at once may glitch you or cause performance issues, must have strong laser gun (red gun) in inventory to use]];
+G2L["21c"]["Position"] = UDim2.new(-0, 0, 0, 0);
 
 
 -- StarterGui.AdminGUI client.Laser gun menu.SectionSelect.Whitelist
-G2L["211"] = Instance.new("Frame", G2L["20f"]);
-G2L["211"]["BorderSizePixel"] = 0;
-G2L["211"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["211"]["Size"] = UDim2.new(0.23691, 0, 1, 0);
-G2L["211"]["Position"] = UDim2.new(0.491, 0, 0, 0);
-G2L["211"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["211"]["Name"] = [[Whitelist]];
-G2L["211"]["BackgroundTransparency"] = 1;
+G2L["21d"] = Instance.new("Frame", G2L["21b"]);
+G2L["21d"]["BorderSizePixel"] = 0;
+G2L["21d"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["21d"]["Size"] = UDim2.new(0.23691, 0, 1, 0);
+G2L["21d"]["Position"] = UDim2.new(0.491, 0, 0, 0);
+G2L["21d"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["21d"]["Name"] = [[Whitelist]];
+G2L["21d"]["BackgroundTransparency"] = 1;
 
 
 -- StarterGui.AdminGUI client.Laser gun menu.SectionSelect.Whitelist.TextButton
-G2L["212"] = Instance.new("TextButton", G2L["211"]);
-G2L["212"]["TextWrapped"] = true;
-G2L["212"]["BorderSizePixel"] = 0;
-G2L["212"]["TextSize"] = 14;
-G2L["212"]["TextScaled"] = true;
-G2L["212"]["TextColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["212"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["212"]["FontFace"] = Font.new([[rbxasset://fonts/families/ComicNeueAngular.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["212"]["BackgroundTransparency"] = 1;
-G2L["212"]["Size"] = UDim2.new(1, 0, 1, 0);
-G2L["212"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["212"]["Text"] = [[Whitelist]];
+G2L["21e"] = Instance.new("TextButton", G2L["21d"]);
+G2L["21e"]["TextWrapped"] = true;
+G2L["21e"]["BorderSizePixel"] = 0;
+G2L["21e"]["TextSize"] = 14;
+G2L["21e"]["TextScaled"] = true;
+G2L["21e"]["TextColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["21e"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["21e"]["FontFace"] = Font.new([[rbxasset://fonts/families/ComicNeueAngular.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["21e"]["BackgroundTransparency"] = 1;
+G2L["21e"]["Size"] = UDim2.new(1, 0, 1, 0);
+G2L["21e"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["21e"]["Text"] = [[Whitelist]];
 
 
 -- StarterGui.AdminGUI client.Laser gun menu.SectionSelect.Whitelist.UIStroke
-G2L["213"] = Instance.new("UIStroke", G2L["211"]);
-G2L["213"]["Enabled"] = false;
-G2L["213"]["Thickness"] = 3;
-G2L["213"]["Color"] = Color3.fromRGB(145, 85, 0);
+G2L["21f"] = Instance.new("UIStroke", G2L["21d"]);
+G2L["21f"]["Enabled"] = false;
+G2L["21f"]["Thickness"] = 3;
+G2L["21f"]["Color"] = Color3.fromRGB(145, 85, 0);
 
 
 -- StarterGui.AdminGUI client.Laser gun menu.SectionSelect.Blacklist
-G2L["214"] = Instance.new("Frame", G2L["20f"]);
-G2L["214"]["BorderSizePixel"] = 0;
-G2L["214"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["214"]["Size"] = UDim2.new(0.27209, 0, 1, 0);
-G2L["214"]["Position"] = UDim2.new(0.72791, 0, 0, 0);
-G2L["214"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["214"]["Name"] = [[Blacklist]];
-G2L["214"]["BackgroundTransparency"] = 1;
+G2L["220"] = Instance.new("Frame", G2L["21b"]);
+G2L["220"]["BorderSizePixel"] = 0;
+G2L["220"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["220"]["Size"] = UDim2.new(0.27209, 0, 1, 0);
+G2L["220"]["Position"] = UDim2.new(0.72791, 0, 0, 0);
+G2L["220"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["220"]["Name"] = [[Blacklist]];
+G2L["220"]["BackgroundTransparency"] = 1;
 
 
 -- StarterGui.AdminGUI client.Laser gun menu.SectionSelect.Blacklist.TextButton
-G2L["215"] = Instance.new("TextButton", G2L["214"]);
-G2L["215"]["TextWrapped"] = true;
-G2L["215"]["BorderSizePixel"] = 0;
-G2L["215"]["TextSize"] = 14;
-G2L["215"]["TextScaled"] = true;
-G2L["215"]["TextColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["215"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["215"]["FontFace"] = Font.new([[rbxasset://fonts/families/ComicNeueAngular.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
-G2L["215"]["BackgroundTransparency"] = 1;
-G2L["215"]["Size"] = UDim2.new(1, 0, 1, 0);
-G2L["215"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["215"]["Text"] = [[Blacklist]];
-G2L["215"]["Position"] = UDim2.new(0.03603, 0, 0, 0);
+G2L["221"] = Instance.new("TextButton", G2L["220"]);
+G2L["221"]["TextWrapped"] = true;
+G2L["221"]["BorderSizePixel"] = 0;
+G2L["221"]["TextSize"] = 14;
+G2L["221"]["TextScaled"] = true;
+G2L["221"]["TextColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["221"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["221"]["FontFace"] = Font.new([[rbxasset://fonts/families/ComicNeueAngular.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal);
+G2L["221"]["BackgroundTransparency"] = 1;
+G2L["221"]["Size"] = UDim2.new(1, 0, 1, 0);
+G2L["221"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["221"]["Text"] = [[Blacklist]];
+G2L["221"]["Position"] = UDim2.new(0.03603, 0, 0, 0);
 
 
 -- StarterGui.AdminGUI client.Laser gun menu.SectionSelect.Blacklist.UIStroke
-G2L["216"] = Instance.new("UIStroke", G2L["214"]);
-G2L["216"]["Enabled"] = false;
-G2L["216"]["Thickness"] = 3;
-G2L["216"]["Color"] = Color3.fromRGB(145, 85, 0);
+G2L["222"] = Instance.new("UIStroke", G2L["220"]);
+G2L["222"]["Enabled"] = false;
+G2L["222"]["Thickness"] = 3;
+G2L["222"]["Color"] = Color3.fromRGB(145, 85, 0);
 
 
 -- StarterGui.AdminGUI client.Laser gun menu.Drag
-G2L["217"] = Instance.new("Frame", G2L["1a1"]);
-G2L["217"]["BorderSizePixel"] = 0;
-G2L["217"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["217"]["Size"] = UDim2.new(1, 0, 0.14286, 0);
-G2L["217"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["217"]["Name"] = [[Drag]];
-G2L["217"]["BackgroundTransparency"] = 1;
+G2L["223"] = Instance.new("Frame", G2L["1a1"]);
+G2L["223"]["BorderSizePixel"] = 0;
+G2L["223"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["223"]["Size"] = UDim2.new(1, 0, 0.14286, 0);
+G2L["223"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["223"]["Name"] = [[Drag]];
+G2L["223"]["BackgroundTransparency"] = 1;
 
 
 -- StarterGui.AdminGUI client.Laser gun menu.UIAspectRatioConstraint
-G2L["218"] = Instance.new("UIAspectRatioConstraint", G2L["1a1"]);
-G2L["218"]["AspectRatio"] = 1.57732;
+G2L["224"] = Instance.new("UIAspectRatioConstraint", G2L["1a1"]);
+G2L["224"]["AspectRatio"] = 1.57732;
 
 
 -- StarterGui.AdminGUI client.Gun icon
-G2L["219"] = Instance.new("Frame", G2L["1"]);
-G2L["219"]["Visible"] = false;
-G2L["219"]["Interactable"] = false;
-G2L["219"]["ZIndex"] = 0;
-G2L["219"]["BorderSizePixel"] = 0;
-G2L["219"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
-G2L["219"]["AnchorPoint"] = Vector2.new(0.5, 0.5);
-G2L["219"]["Size"] = UDim2.new(0, 60, 0, 60);
-G2L["219"]["Position"] = UDim2.new(0.5, 0, 0.85, 0);
-G2L["219"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["219"]["Name"] = [[Gun icon]];
+G2L["225"] = Instance.new("Frame", G2L["1"]);
+G2L["225"]["Visible"] = false;
+G2L["225"]["Interactable"] = false;
+G2L["225"]["ZIndex"] = 0;
+G2L["225"]["BorderSizePixel"] = 0;
+G2L["225"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
+G2L["225"]["AnchorPoint"] = Vector2.new(0.5, 0.5);
+G2L["225"]["Size"] = UDim2.new(0, 60, 0, 60);
+G2L["225"]["Position"] = UDim2.new(0.5, 0, 0.85, 0);
+G2L["225"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["225"]["Name"] = [[Gun icon]];
 
 
 -- StarterGui.AdminGUI client.Gun icon.UIAspectRatioConstraint
-G2L["21a"] = Instance.new("UIAspectRatioConstraint", G2L["219"]);
+G2L["226"] = Instance.new("UIAspectRatioConstraint", G2L["225"]);
 
 
 
 -- StarterGui.AdminGUI client.Gun icon.UICorner
-G2L["21b"] = Instance.new("UICorner", G2L["219"]);
+G2L["227"] = Instance.new("UICorner", G2L["225"]);
 
 
 
 -- StarterGui.AdminGUI client.Gun icon.UIGradient
-G2L["21c"] = Instance.new("UIGradient", G2L["219"]);
-G2L["21c"]["Rotation"] = -90;
-G2L["21c"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(51, 34, 0)),ColorSequenceKeypoint.new(0.480, Color3.fromRGB(51, 34, 0)),ColorSequenceKeypoint.new(0.491, Color3.fromRGB(51, 51, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(26, 51, 0))};
+G2L["228"] = Instance.new("UIGradient", G2L["225"]);
+G2L["228"]["Rotation"] = -90;
+G2L["228"]["Color"] = ColorSequence.new{ColorSequenceKeypoint.new(0.000, Color3.fromRGB(51, 34, 0)),ColorSequenceKeypoint.new(0.480, Color3.fromRGB(51, 34, 0)),ColorSequenceKeypoint.new(0.491, Color3.fromRGB(51, 51, 0)),ColorSequenceKeypoint.new(1.000, Color3.fromRGB(26, 51, 0))};
 
 
 -- StarterGui.AdminGUI client.Gun icon.UIStroke
-G2L["21d"] = Instance.new("UIStroke", G2L["219"]);
-G2L["21d"]["Thickness"] = 1.5;
+G2L["229"] = Instance.new("UIStroke", G2L["225"]);
+G2L["229"]["Thickness"] = 1.5;
 
 
 -- StarterGui.AdminGUI client.Gun icon.Frame
-G2L["21e"] = Instance.new("Frame", G2L["219"]);
-G2L["21e"]["BorderSizePixel"] = 0;
-G2L["21e"]["BackgroundColor3"] = Color3.fromRGB(73, 73, 73);
-G2L["21e"]["Size"] = UDim2.new(0.1, 0, 0.8, 0);
-G2L["21e"]["Position"] = UDim2.new(0.13333, 0, 0.2, 0);
-G2L["21e"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["22a"] = Instance.new("Frame", G2L["225"]);
+G2L["22a"]["BorderSizePixel"] = 0;
+G2L["22a"]["BackgroundColor3"] = Color3.fromRGB(73, 73, 73);
+G2L["22a"]["Size"] = UDim2.new(0.1, 0, 0.8, 0);
+G2L["22a"]["Position"] = UDim2.new(0.13333, 0, 0.2, 0);
+G2L["22a"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
 
 
 -- StarterGui.AdminGUI client.Gun icon.Frame.UIStroke
-G2L["21f"] = Instance.new("UIStroke", G2L["21e"]);
-G2L["21f"]["Thickness"] = 1.5;
+G2L["22b"] = Instance.new("UIStroke", G2L["22a"]);
+G2L["22b"]["Thickness"] = 1.5;
 
 
 -- StarterGui.AdminGUI client.Gun icon.Frame
-G2L["220"] = Instance.new("Frame", G2L["219"]);
-G2L["220"]["BorderSizePixel"] = 0;
-G2L["220"]["BackgroundColor3"] = Color3.fromRGB(73, 73, 73);
-G2L["220"]["Size"] = UDim2.new(0.63333, 0, 0.13333, 0);
-G2L["220"]["Position"] = UDim2.new(0.23333, 0, 0.2, 0);
-G2L["220"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["22c"] = Instance.new("Frame", G2L["225"]);
+G2L["22c"]["BorderSizePixel"] = 0;
+G2L["22c"]["BackgroundColor3"] = Color3.fromRGB(73, 73, 73);
+G2L["22c"]["Size"] = UDim2.new(0.63333, 0, 0.13333, 0);
+G2L["22c"]["Position"] = UDim2.new(0.23333, 0, 0.2, 0);
+G2L["22c"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
 
 
 -- StarterGui.AdminGUI client.Gun icon.Frame.UIStroke
-G2L["221"] = Instance.new("UIStroke", G2L["220"]);
-G2L["221"]["Thickness"] = 1.5;
+G2L["22d"] = Instance.new("UIStroke", G2L["22c"]);
+G2L["22d"]["Thickness"] = 1.5;
 
 
 -- StarterGui.AdminGUI client.Gun icon.Frame.Frame
-G2L["222"] = Instance.new("Frame", G2L["220"]);
-G2L["222"]["BorderSizePixel"] = 0;
-G2L["222"]["BackgroundColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["222"]["Size"] = UDim2.new(0.15789, 0, 1, 0);
-G2L["222"]["Position"] = UDim2.new(0.8, 0, 0, 0);
-G2L["222"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["22e"] = Instance.new("Frame", G2L["22c"]);
+G2L["22e"]["BorderSizePixel"] = 0;
+G2L["22e"]["BackgroundColor3"] = Color3.fromRGB(0, 0, 0);
+G2L["22e"]["Size"] = UDim2.new(0.15789, 0, 1, 0);
+G2L["22e"]["Position"] = UDim2.new(0.8, 0, 0, 0);
+G2L["22e"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
 
--- Once fully loaded, add the tag to confirm the loading
+-- Add a tag after it is loaded
+
 CollectionService:AddTag(G2L["1"], [[GUI_waydroid_loaded]]);
--- Then create the gui
 
 return G2L["1"], require;

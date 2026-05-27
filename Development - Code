@@ -4248,9 +4248,8 @@ GUI.Changed:Once(function()
 								end)
 							end
 						end
-						-- Clear inputs to prevent re-triggering self-jail
-						usernameTextBox.Text = ""
-						if reasonTextBox then reasonTextBox.Text = "" end
+						-- I don't want to waste time removing this useless shit but whatever it can stay
+						if reasonTextBox then  end
 						return
 					else
 						-- Start confirm state

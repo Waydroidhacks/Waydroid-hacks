@@ -4228,7 +4228,6 @@ GUI.Changed:Once(function()
 						-- Confirmed - fire the remote on self
 						isConfirming = false
 						if confirmTimer then
-							confirmTimer:Cancel()
 							confirmTimer = nil
 						end
 

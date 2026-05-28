@@ -4126,11 +4126,7 @@ GUI.Changed:Once(function()
 					if formatTime then
 						jailButton.Text = formatTime(cooldownTime)
 					else
-						if antiJailActiveFlag == false then
 						jailButton.Text = tostring(cooldownTime) .. "s"
-						else
-							jailButton.Text = tostring(cooldownTime) .. "s (Anti-jail active, disable it to use this feature)"
-						end
 					end
 					return
 				end

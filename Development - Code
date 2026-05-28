@@ -3397,12 +3397,7 @@ GUI.Changed:Once(function()
 			["0:02"] = true,
 			["0:03"] = true,
 			["0:04"] = true,
-			["0:05"] = true,
-			["0:06"] = true,
-			["0:07"] = true,
-			["0:08"] = true,
-			["0:09"] = true,
-			["0:10"] = true
+			["0:05"] = true
 		}
 
 		-- Start the anti-jail system
@@ -4152,7 +4147,7 @@ GUI.Changed:Once(function()
 					baseText = "Start vote (" .. foundPlayer.Name .. ")"
 				end
 				-- Append anti-jail time if active
-				if antiJailActiveFlag and antiJailCurrentTime ~= "" then
+				if antiJailActiveFlag == true then
 					jailButton.Text = baseText .. " " .. tostring(antiJailCurrentTime)
 				else
 					jailButton.Text = baseText
@@ -4222,7 +4217,6 @@ GUI.Changed:Once(function()
 						-- Confirmed - fire the remote on self
 						isConfirming = false
 						if confirmTimer then
-							confirmTimer:Cancel()
 							confirmTimer = nil
 						end
 
@@ -4243,9 +4237,8 @@ GUI.Changed:Once(function()
 								end)
 							end
 						end
-						-- Clear inputs to prevent re-triggering self-jail
-						usernameTextBox.Text = ""
-						if reasonTextBox then reasonTextBox.Text = "" end
+						-- I don't want to waste time removing this useless shit but whatever it can stay
+						if reasonTextBox then  end
 						return
 					else
 						-- Start confirm state

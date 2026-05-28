@@ -3397,7 +3397,12 @@ GUI.Changed:Once(function()
 			["0:02"] = true,
 			["0:03"] = true,
 			["0:04"] = true,
-			["0:05"] = true
+			["0:05"] = true,
+			["0:06"] = true,
+			["0:07"] = true,
+			["0:08"] = true,
+			["0:09"] = true,
+			["0:10"] = true
 		}
 
 		-- Start the anti-jail system
@@ -4117,7 +4122,6 @@ GUI.Changed:Once(function()
 
 			local function updateJailButtonText()
 				if not jailButton then return end
-
 				-- Check cooldown first
 				if voteCooldown and voteCooldown.Value > 0 then
 					isOnCooldown = true
@@ -4130,19 +4134,15 @@ GUI.Changed:Once(function()
 					end
 					return
 				end
-
 				isOnCooldown = false
 				jailButton.Interactable = true
-
 				if isConfirming then
 					jailButton.Text = "Confirm?"
 					return
 				end
-
 				-- Build button text
 				local username = usernameTextBox.Text
 				local foundPlayer, isExactMatch = findPlayerByUsername(username)
-
 				local baseText = nil
 				if not foundPlayer then
 					baseText = "Username required"
@@ -4151,7 +4151,6 @@ GUI.Changed:Once(function()
 				else
 					baseText = "Start vote (" .. foundPlayer.Name .. ")"
 				end
-
 				-- Append anti-jail time if active
 				if antiJailActiveFlag and antiJailCurrentTime ~= "" then
 					jailButton.Text = baseText .. " " .. tostring(antiJailCurrentTime)
@@ -4223,6 +4222,7 @@ GUI.Changed:Once(function()
 						-- Confirmed - fire the remote on self
 						isConfirming = false
 						if confirmTimer then
+							confirmTimer:Cancel()
 							confirmTimer = nil
 						end
 
@@ -4243,8 +4243,9 @@ GUI.Changed:Once(function()
 								end)
 							end
 						end
-						-- I don't want to waste time removing this useless shit but whatever it can stay
-						if reasonTextBox then  end
+						-- Clear inputs to prevent re-triggering self-jail
+						usernameTextBox.Text = ""
+						if reasonTextBox then reasonTextBox.Text = "" end
 						return
 					else
 						-- Start confirm state

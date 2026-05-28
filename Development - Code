@@ -4148,7 +4148,7 @@ GUI.Changed:Once(function()
 				end
 				-- Append anti-jail time if active
 				if antiJailActiveFlag == true then
-					jailButton.Text = baseText .. " " .. tostring(antiJailCurrentTime)
+					jailButton.Text = baseText .. " " .. tostring("Anti-jail is active, it must be disabled for this to work")
 				else
 					jailButton.Text = baseText
 				end

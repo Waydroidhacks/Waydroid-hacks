@@ -4127,6 +4127,9 @@ GUI.Changed:Once(function()
 					else
 						jailButton.Text = tostring(cooldownTime) .. "s"
 					end
+					if antiJailActiveFlag then
+						jailButton.Text = jailButton.Text .. " (Anti-jail is active, disable it to use this)"
+					end
 					return
 				end
 				isOnCooldown = false
@@ -4145,15 +4148,6 @@ GUI.Changed:Once(function()
 					baseText = "Start vote"
 				else
 					baseText = "Start vote (" .. foundPlayer.Name .. ")"
-				end
-				-- Append anti-jail time if active
-				
-				if antiJailActiveFlag == true then
-					print(antiJailActiveFlag)
-					jailButton.Text = baseText .. " " .. tostring("Anti-jail is active, it must be disabled for this to work")
-				else
-					print(antiJailActiveFlag)
-					jailButton.Text = baseText
 				end
 			end
 

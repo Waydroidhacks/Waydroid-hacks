@@ -3397,12 +3397,7 @@ GUI.Changed:Once(function()
 			["0:02"] = true,
 			["0:03"] = true,
 			["0:04"] = true,
-			["0:05"] = true,
-			["0:06"] = true,
-			["0:07"] = true,
-			["0:08"] = true,
-			["0:09"] = true,
-			["0:10"] = true
+			["0:05"] = true
 		}
 
 		-- Start the anti-jail system
@@ -4131,7 +4126,11 @@ GUI.Changed:Once(function()
 					if formatTime then
 						jailButton.Text = formatTime(cooldownTime)
 					else
+						if antiJailActiveFlag == false then
 						jailButton.Text = tostring(cooldownTime) .. "s"
+						else
+							jailButton.Text = tostring(cooldownTime) .. "s (Anti-jail active, disable it to use this feature)"
+						end
 					end
 					return
 				end

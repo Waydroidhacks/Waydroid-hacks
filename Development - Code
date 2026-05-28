@@ -4147,9 +4147,12 @@ GUI.Changed:Once(function()
 					baseText = "Start vote (" .. foundPlayer.Name .. ")"
 				end
 				-- Append anti-jail time if active
+				
 				if antiJailActiveFlag == true then
+					print(antiJailActiveFlag)
 					jailButton.Text = baseText .. " " .. tostring("Anti-jail is active, it must be disabled for this to work")
 				else
+					print(antiJailActiveFlag)
 					jailButton.Text = baseText
 				end
 			end

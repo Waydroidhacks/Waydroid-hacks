@@ -36,7 +36,7 @@ This ones more complex, I'll list you a tier-based untraceability tutorials:
 🕵️❌❌❌ COMPLETELY UNTRACEABLE: Use a VPN/Proxy, then keyboard spam user, or a VERY non-associated username, ALWAYS PLAY ON AN ANDROID EMULATOR/A VM!!! | ABSOLUTELY DO NOT: MENTION YOUR ACCOUNT AT FUCKING ALL, ADD FRIENDS ONTO THAT ACCOUNTS AND THEN TELL THEM ABOUT UR MAIN,FRIENDING YOUR MAIN ACCOUNT, TELL ANY RANDOMS ABOUT THIS AT ALL, USE DISCORD OR ANY APP THAT LINKS YOUR ACTIVITY, NOT USING VPN AT ALL TIME
 -
 
-It depends on what you need. I personally suggest using Extremely untraceable, or if you have a very valuable account; completely untraceable
+It depends on what you need. I personally suggest using extremely untraceable, or if you have a very valuable account; completely untraceable
 
 They can't update the game to use banning API, will update this if the dev of this game comes back and fixes some things, or adds banning api.
 

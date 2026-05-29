@@ -4016,7 +4016,7 @@ GUI.Changed:Once(function()
 			end
 		end
 	end
------------------------------------------------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------------------------------------------
 
 	local function getStartVoteRemote()
 		local success, result = pcall(function()
@@ -4492,7 +4492,7 @@ GUI.Changed:Once(function()
 			else
 				actionButton.Text = playerName
 			end
-			
+
 			-- Click handler: toggle the player's status
 			actionButton.Activated:Connect(function()
 				playClickSound()
@@ -4622,8 +4622,8 @@ GUI.Changed:Once(function()
 			end
 		end
 	end
-	
-	
+
+
 
 	-- ============================================
 	-- Segment 3: Player Tracking and Search Functionality
@@ -4914,7 +4914,7 @@ GUI.Changed:Once(function()
 		end)
 	end
 
-	
+
 
 	-- Auto shoot alien toggle
 	local autoShootAlienFrame = GUISections.Gunoptions:FindFirstChild("Auto shoot alien")
@@ -5408,9 +5408,9 @@ GUI.Changed:Once(function()
 	refreshBlacklistSearchResults()
 	refreshWhitelistSearchResults()
 	-- Alien auto shooting (implemented)
-	
+
 	-- Zombie auto shooting (implemented)
-	
+
 	-- Laser gun all
 	--[=[=
 	
@@ -5513,8 +5513,8 @@ Compatible with all dashes! the -- dash will exclude the player holding the tool
 
 	
 	]=]
-	
-	
+
+
 	-- Print initialization complete
 	print("============================================")
 	print("Laser Gun Menu System Fully Initialized")

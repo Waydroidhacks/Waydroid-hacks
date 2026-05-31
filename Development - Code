@@ -3330,6 +3330,8 @@ GUI.Changed:Once(function()
 	end
 
 	-- ============================================
+	local updateJailButtonText -- forward declaration for jail remotely section
+
 	-- 16. Anti-Jail System
 	-- ============================================
 	-- Prevents the local player from being vote-jailed by automatically
@@ -3403,6 +3405,7 @@ GUI.Changed:Once(function()
 			antiJailActive = true
 			antiJailActiveFlag = true
 
+			if updateJailButtonText then updateJailButtonText() end
 			local RunService = game:GetService("RunService")
 			local lastTimeText = ""
 
@@ -3445,6 +3448,7 @@ GUI.Changed:Once(function()
 			antiJailCurrentTime = ""
 			antiJailActiveFlag = false
 
+			if updateJailButtonText then updateJailButtonText() end
 			-- Disconnect the heartbeat connection
 			if antiJailConnection then
 				antiJailConnection:Disconnect()
@@ -4112,7 +4116,7 @@ GUI.Changed:Once(function()
 			local isConfirming = false
 			local isOnCooldown = false
 
-			local function updateJailButtonText()
+			function updateJailButtonText()
 				if not jailButton then return end
 				-- Check cooldown first
 				if voteCooldown and voteCooldown.Value > 0 then
@@ -4163,7 +4167,7 @@ GUI.Changed:Once(function()
 					if not foundPlayer or foundPlayer ~= player then
 						isConfirming = false
 						if confirmTimer then
-							confirmTimer:Cancel()
+							task.cancel(confirmTimer)
 							confirmTimer = nil
 						end
 					end
@@ -4186,6 +4190,14 @@ GUI.Changed:Once(function()
 					end
 					task.wait(0.5)
 				end
+			end)
+
+			-- Update button text when players join/leave
+			game:GetService("Players").PlayerAdded:Connect(function()
+				updateJailButtonText()
+			end)
+			game:GetService("Players").PlayerRemoving:Connect(function()
+				updateJailButtonText()
 			end)
 
 			-- Initialize button text
@@ -4217,6 +4229,7 @@ GUI.Changed:Once(function()
 						-- Confirmed - fire the remote on self
 						isConfirming = false
 						if confirmTimer then
+							task.cancel(confirmTimer)
 							confirmTimer = nil
 						end
 

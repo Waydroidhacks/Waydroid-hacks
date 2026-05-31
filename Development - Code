@@ -10,9 +10,6 @@ local CoreGui = game:GetService("CoreGui")
 local guiFound = false
 local childAddedConnection = nil
 
-local function findTaggedGUI()
-end
-
 local function onGUIFound(child)
 	if child ~= nil then
 		print(child)
@@ -29,7 +26,7 @@ local function onGUIFound(child)
 end
 
 -- Check if GUI already exists
-local taggedGUI = findTaggedGUI()
+local taggedGUI = nil 	-- Im too fucking lazy to remove this, fuck stupid errors
 
 if taggedGUI then
 	onGUIFound(taggedGUI)
@@ -3809,7 +3806,7 @@ GUI.Changed:Once(function()
 						-- Check if ClickDetector still exists and has a parent
 						if clickDetector and clickDetector.Parent then
 							-- Skip ClickDetectors whose parent is a part named "StartButton" when keyswitch-only mode is on
-							if onlyKeyswitch and clickDetector.Parent and clickDetector.Parent.Name == "StartButton" then
+							if onlyKeyswitch and clickDetector.Parent.Name == "StartButton" then
 								continue
 							end
 							fireInstance(clickDetector)

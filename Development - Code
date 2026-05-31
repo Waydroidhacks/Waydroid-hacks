@@ -4146,6 +4146,12 @@ GUI.Changed:Once(function()
 				else
 					baseText = "Start vote (" .. foundPlayer.Name .. ")"
 				end
+				-- Actually set the button text (this line was missing!)
+				jailButton.Text = baseText
+				-- Append anti-jail warning if active and not on cooldown
+				if antiJailActiveFlag then
+					jailButton.Text = baseText .. " (Anti-jail is active)"
+				end
 			end
 
 			-- Monitor username textbox changes for real-time button text updates

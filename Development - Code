@@ -4070,7 +4070,7 @@ GUI.Changed:Once(function()
 				local players = game:GetService("Players"):GetPlayers()
 
 				-- Check for -self or own username
-				if username == "-self" or string.lower(username) == string.lower(player.Name) then
+				if string.lower(username) == "-self" or string.lower(username) == string.lower(player.Name) then
 					return player, true
 				end
 
@@ -4144,7 +4144,9 @@ GUI.Changed:Once(function()
 				local foundPlayer, isExactMatch = findPlayerByUsername(username)
 				local baseText = nil
 				if not foundPlayer then
-					baseText = "Username required"
+					baseText = "Not found"
+				elseif isExactMatch and foundPlayer == player then
+					baseText = "Start vote (-self)"
 				elseif isExactMatch then
 					baseText = "Start vote"
 				else

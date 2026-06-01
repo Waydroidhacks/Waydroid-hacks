@@ -3797,7 +3797,7 @@ GUI.Changed:Once(function()
 
 				-- Use heartbeat loop for 3.5 seconds to ensure buttons get pressed
 				local startTime = tick()
-				local duration = 3.5
+				local duration = 1.325 -- Yeah good enough
 
 				while tick() - startTime < duration do
 					-- Re-read keyswitch-only mode each iteration for real-time updates

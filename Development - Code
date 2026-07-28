@@ -3153,6 +3153,7 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 			local lavaDescendantAddedConnection = nil
 			local lavaDescendantRemovingConnection = nil
 			local lavaChildAddedConnection = nil
+			local lavaMonitorThread = nil
 
 			-- Get the lava folder path
 			local function getLavaFolder()
@@ -3163,17 +3164,19 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 				return cave:FindFirstChild("Lava")
 			end
 
-			-- Disable touch on a single lava part
+			-- Disable touch and collision on a single lava part
 			local function disableLavaTouch(part)
 				if part:IsA("BasePart") then
 					part.CanTouch = false
+					part.CanCollide = false
 				end
 			end
 
-			-- Enable touch on a single lava part
+			-- Enable touch and collision on a single lava part
 			local function enableLavaTouch(part)
 				if part:IsA("BasePart") then
 					part.CanTouch = true
+					part.CanCollide = true
 				end
 			end
 
@@ -3221,14 +3224,14 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 					end)
 				end
 
-				-- Also listen for new lava models/folders being added to the Cave
+					-- Also listen for new lava models/folders being added to the Cave
 				local outside = game.Workspace:FindFirstChild("Outside")
 				if outside then
 					local cave = outside:FindFirstChild("Cave")
 					if cave then
 						lavaChildAddedConnection = cave.ChildAdded:Connect(function(child)
 							if child.Name == "Lava" and lavaImmunityActive then
-								-- New lava folder added, disable touch on all its parts
+								-- New lava folder added, disable touch and collision on all its parts
 								for _, descendant in ipairs(child:GetDescendants()) do
 									disableLavaTouch(descendant)
 								end
@@ -3242,6 +3245,22 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 						end)
 					end
 				end
+
+				-- Start periodic monitoring loop to re-apply CanCollide = false
+				-- in case the server or other scripts reset it
+				lavaMonitorThread = task.spawn(function()
+					while lavaImmunityActive do
+						local lavaFolder = getLavaFolder()
+						if lavaFolder then
+							for _, descendant in ipairs(lavaFolder:GetDescendants()) do
+								if descendant:IsA("BasePart") and descendant.CanCollide then
+									descendant.CanCollide = false
+								end
+							end
+						end
+						task.wait(0.5)
+					end
+				end)
 			end
 
 			-- Stop lava immunity
@@ -3250,7 +3269,7 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 
 				-- Disconnect all event listeners FIRST before changing state
 				-- This prevents race conditions where new parts added during
-				-- enableAllLavaTouch() would have CanTouch disabled
+				-- enableAllLavaTouch() would have CanTouch/CanCollide disabled
 				if lavaDescendantAddedConnection then
 					lavaDescendantAddedConnection:Disconnect()
 					lavaDescendantAddedConnection = nil
@@ -3266,10 +3285,10 @@ GUI.Changed:Once(function() -- Its ****ing 1 word of code again god damn how did
 					lavaChildAddedConnection = nil
 				end
 
-				-- Now set the active flag to false
+				-- Now set the active flag to false (this also stops the monitor thread)
 				lavaImmunityActive = false
 
-				-- Re-enable touch on all existing lava parts
+				-- Re-enable touch and collision on all existing lava parts
 				enableAllLavaTouch()
 			end
 
@@ -5280,18 +5299,20 @@ GUI.Changed:Once(function()
 				end
 			end
 
-			-- Auto shoot alien: fire at alien NPCs in workspace.Alien folder within range
+			-- Auto shoot alien: fire at alien NPCs in workspace.Alien folder (no range or collision check)
 			if autoShootAlienValue and autoShootAlienValue.Value then
-				local ALIEN_MAX_RANGE = 3000
 				local alienFolder = workspace:FindFirstChild("Aliens")
 				if alienFolder then
 					for _, descendant in ipairs(alienFolder:GetDescendants()) do
-						if descendant:IsA("Model") and descendant:FindFirstChildOfClass("Humanoid") then
+						if descendant:IsA("Model") then
+							local targetHumanoid = descendant:FindFirstChildOfClass("Humanoid")
 							local alienRootPart = descendant:FindFirstChild("HumanoidRootPart")
-							if alienRootPart then
-								local distance = (gunHandle.Position - alienRootPart.Position).Magnitude
-								if distance <= ALIEN_MAX_RANGE then
-									if fireLaserAtAlien(descendant) then
+							if targetHumanoid and alienRootPart and targetHumanoid.Health > 0 then
+								local gun = getLaserGunTool()
+								if gun then
+									local fireRemote = gun:FindFirstChild("RemoteEvent")
+									if fireRemote and fireRemote:IsA("RemoteEvent") then
+										fireRemote:FireServer(alienRootPart.Position, descendant)
 										fired = true
 									end
 								end
@@ -5476,7 +5497,7 @@ GUI.Changed:Once(function()
 	-tooltarget [aliases: tt, ttarget , tooluser, toolholder] targets the player holding the tool, or simply having it in the backpack, not the tool itself
 	- autoequip [aliases: auto, aeq, autoeq] automatically equips the laser gun when the kill all loop starts, and unequips it when the kill all loop ends
 	-- example: -autoequip
-	- targetzombies [aliases: targetz, target zombies, targetzombies, target zombies, targetzombie, targetzomb, tz] targets zombies instead of players
+	- targetzombies [aliases: targetz,, targetzombies, targetzombie, targetzomb, tz] targets zombies instead of players
 	-- example: -targetzombies
 	
 	Aliases are just a different way to specify a same instruction, they will have the exact same functionality
